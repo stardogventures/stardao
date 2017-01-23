@@ -19,6 +19,9 @@ public class ModelValidator {
     }
 
     public List<ValidationError> getModelValidationErrors(Object object, Class validationGroup) {
+        if (object == null) {
+            return ImmutableList.of(ValidationError.of("", "object is null"));
+        }
         Set<ConstraintViolation<Object>> violations = validator.validate(object, validationGroup);
         return violations.stream()
                .map((v) -> ValidationError.of(v.getPropertyPath().toString(), v.getMessage()))
@@ -26,6 +29,9 @@ public class ModelValidator {
     }
 
     public List<ValidationError> getUpdateValidationErrors(Update<?> update, Set<String> updatableFields) {
+        if (update == null) {
+            return ImmutableList.of(ValidationError.of("", "update is null"));
+        }
         ImmutableList.Builder<ValidationError> errors = ImmutableList.builder();
         Set<String> updateFields = update.getUpdateFields();
 
