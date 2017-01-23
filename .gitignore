@@ -1,0 +1,7 @@
+.idea
+target
+stardao-core/target
+stardao-dynamodb/target
+stardao-dynamodb/native-libs
+stardao-jersey/target
+stardao-mongodb/target
