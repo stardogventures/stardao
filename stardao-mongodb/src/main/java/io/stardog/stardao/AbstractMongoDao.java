@@ -108,7 +108,9 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             foundCount++;
         }
 
-        if (foundCount <= limit) {
+        if (foundCount <= 0) {
+            return Results.of(builder.build());
+        } else if (foundCount <= limit) {
             builder.add(mostRecentObject);
             return Results.of(builder.build());
         } else {
@@ -151,7 +153,9 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             foundCount++;
         }
 
-        if (foundCount <= limit) {
+        if (foundCount <= 0) {
+            return Results.of(builder.build());
+        } else if (foundCount <= limit) {
             builder.add(mostRecentObject);
             return Results.of(builder.build());
         } else {

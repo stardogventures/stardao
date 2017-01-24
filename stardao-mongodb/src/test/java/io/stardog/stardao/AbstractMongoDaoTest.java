@@ -92,6 +92,10 @@ public class AbstractMongoDaoTest {
         assertEquals("Bob 50", page2.getData().get(0).getName());
         assertEquals("Bob 99", page2.getData().get(49).getName());
         assertFalse(page2.getNext().isPresent());
+
+        Results<TestUser,Integer> nomatch = dao.findWithSkipLimitPagination(dao.getCollection().find(query).sort(sort), 100, 0);
+        assertEquals(0, nomatch.getData().size());
+        assertFalse(nomatch.getNext().isPresent());
     }
 
     @Test
@@ -120,6 +124,11 @@ public class AbstractMongoDaoTest {
         assertEquals("Bob 50", page2.getData().get(0).getName());
         assertEquals("Bob 99", page2.getData().get(49).getName());
         assertFalse(page2.getNext().isPresent());
+
+        query = new Document("active", false);
+        Results<TestUser,String> nomatch = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
+        assertEquals(0, nomatch.getData().size());
+        assertFalse(nomatch.getNext().isPresent());
     }
 
     @Test
