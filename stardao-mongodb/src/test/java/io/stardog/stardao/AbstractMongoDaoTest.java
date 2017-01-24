@@ -3,6 +3,7 @@ package io.stardog.stardao;
 import com.github.fakemongo.Fongo;
 import com.google.common.collect.ImmutableSet;
 import io.stardog.stardao.core.Update;
+import io.stardog.stardao.exceptions.DataNotFoundException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Before;
@@ -13,11 +14,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AbstractMongoDaoTest {
     private TestUserDao dao;
@@ -51,6 +48,21 @@ public class AbstractMongoDaoTest {
 
         TestUser load = dao.loadOpt(created.getId()).get();
         assertEquals(load, created);
+    }
+
+    @Test
+    public void testLoadByQuery() throws Exception {
+        TestUser created = dao.create(TestUser.builder().name("Ian").email("ian@example.com").build());
+
+        TestUser load = dao.loadByQuery(new Document("email", "ian@example.com"));
+        assertEquals(load, created);
+
+        try {
+            dao.loadByQuery(new Document("email", "notfound@example.com"));
+            fail("Expected DataNotFoundException");
+        } catch (DataNotFoundException e) {
+            assertEquals("TestUser not found", e.getMessage());
+        }
     }
 
     @Test

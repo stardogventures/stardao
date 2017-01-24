@@ -7,6 +7,7 @@ import io.stardog.stardao.core.AbstractDao;
 import io.stardog.stardao.core.Update;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
+import io.stardog.stardao.exceptions.DataNotFoundException;
 import io.stardog.stardao.mapper.DocumentMapper;
 import io.stardog.stardao.mapper.JacksonDocumentMapper;
 import org.bson.Document;
@@ -69,6 +70,14 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         Document query = new Document(ID_FIELD, id);
         Document doc = collection.find(query).limit(1).first();
         return Optional.ofNullable(mapper.toObject(doc));
+    }
+
+    protected M loadByQuery(Document query) {
+        Document doc = collection.find(query).limit(1).first();
+        if (doc == null) {
+            throw new DataNotFoundException(getDisplayModelName() + " not found");
+        }
+        return mapper.toObject(doc);
     }
 
     @Override
