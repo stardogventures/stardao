@@ -8,6 +8,7 @@ import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.geojson.Point;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -76,6 +77,16 @@ public class JacksonDocumentMapperTest {
 
         TestUser back = mapper.toObject(doc);
         assertEquals(user, back);
+    }
+
+    @Test
+    public void testMapGeoJsonPoint() throws Exception {
+        Point point = new Point(-73.9857, 40.7484);
+        JacksonDocumentMapper<Point> pointMapper = new JacksonDocumentMapper<>(Point.class);
+        Document doc = pointMapper.toDocument(point);
+        assertEquals("Document{{type=Point, coordinates=[-73.9857, 40.7484]}}", doc.toString());
+        Point back = pointMapper.toObject(doc);
+        assertEquals(point, back);
     }
 
     @Test
