@@ -12,7 +12,7 @@ public class DataValidationExceptionMapper implements ExceptionMapper<DataValida
     public Response toResponse(DataValidationException e) {
         return Response.status(400)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .entity(ImmutableMap.of("error", e.getMessage(), "errors", e.getErrors()))
+                .entity(ImmutableMap.of("code", 400, "message", e.getMessage(), "errors", e.getErrors()))
                 .build();
     }
 }

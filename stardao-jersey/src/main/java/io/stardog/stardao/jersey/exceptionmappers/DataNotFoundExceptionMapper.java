@@ -12,7 +12,7 @@ public class DataNotFoundExceptionMapper implements ExceptionMapper<DataNotFound
     public Response toResponse(DataNotFoundException e) {
         return Response.status(404)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .entity(ImmutableMap.of("error", e.getMessage()))
+                .entity(ImmutableMap.of("code", 404, "message", e.getMessage()))
                 .build();
     }
 }
