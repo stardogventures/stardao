@@ -43,9 +43,6 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
                 documentToObjectFieldRenames.put(field.getStorageName(), field.getName());
             }
         }
-        System.out.println(fieldData);
-        System.out.println("obj -> doc: " + objectToDocumentFieldRenames);
-        System.out.println("doc -> obj: " + documentToObjectFieldRenames);
     }
 
     public M toObject(Document document) {

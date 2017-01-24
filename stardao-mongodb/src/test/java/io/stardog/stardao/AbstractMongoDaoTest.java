@@ -87,7 +87,6 @@ public class AbstractMongoDaoTest {
     @Test
     public void testUpdateAndReturn() throws Exception {
         TestUser created = dao.create(TestUser.builder().name("Ian").build());
-        System.out.println(created);
 
         ObjectId updateBy = new ObjectId();
         Instant now = Instant.now();
@@ -96,7 +95,6 @@ public class AbstractMongoDaoTest {
                 TestUser.builder().name("Bob").build(),
                 ImmutableSet.of("name"));
         TestUser prev = dao.updateAndReturn(created.getId(), update, now, updateBy);
-        System.out.println(prev);
 
         assertEquals(created, prev);
 
