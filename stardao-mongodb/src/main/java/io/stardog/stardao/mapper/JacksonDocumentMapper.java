@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+import io.stardog.stardao.core.field.Field;
+import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.mapper.serializers.MongoModule;
 import org.bson.Document;
 import org.mongojack.MongoJsonMappingException;
@@ -30,26 +32,28 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
             .registerModule(new JavaTimeModule())
             .registerModule(new MongoModule());
 
-    public JacksonDocumentMapper(Class<M> modelClass, ObjectMapper objectMapper, Map<String, String> objectToDocumentFieldRenames) {
+    public JacksonDocumentMapper(Class<M> modelClass, ObjectMapper objectMapper, FieldData fieldData) {
         this.modelClass = modelClass;
         this.objectMapper = objectMapper;
-        this.objectToDocumentFieldRenames = objectToDocumentFieldRenames;
+        this.objectToDocumentFieldRenames = new HashMap<>();
         this.documentToObjectFieldRenames = new HashMap<>();
-        for (Map.Entry<String,String> entry : objectToDocumentFieldRenames.entrySet()) {
-            documentToObjectFieldRenames.put(entry.getValue(), entry.getKey());
+        for (Field field : fieldData.getAll().values()) {
+            if (!field.getStorageName().equals(field.getName())) {
+                objectToDocumentFieldRenames.put(field.getName(), field.getStorageName());
+                documentToObjectFieldRenames.put(field.getStorageName(), field.getName());
+            }
         }
+        System.out.println(fieldData);
+        System.out.println("obj -> doc: " + objectToDocumentFieldRenames);
+        System.out.println("doc -> obj: " + documentToObjectFieldRenames);
     }
 
     public M toObject(Document document) {
         if (document == null) {
             return null;
         }
-        Document renamedDocument = new Document();
-        for (String key : document.keySet()) {
-            String renamedKey = documentToObjectFieldRenames.getOrDefault(key, key);
-            renamedDocument.put(renamedKey, document.get(key));
-        }
-        return objectMapper.convertValue(renamedDocument, modelClass);
+        Document renamed = renameDocument(document, documentToObjectFieldRenames);
+        return objectMapper.convertValue(renamed, modelClass);
     }
 
     @Override
@@ -59,14 +63,17 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         }
         DBObject dbObject = mongoJackConvert(object);
         Document document = dbObjectToDocument(dbObject);
-        for (String key : objectToDocumentFieldRenames.keySet()) {
-            if (document.containsKey(key)) {
-                String renamedKey = objectToDocumentFieldRenames.get(key);
-                document.put(renamedKey, document.get(key));
-                document.remove(key);
-            }
+        Document renamed = renameDocument(document, objectToDocumentFieldRenames);
+        return renamed;
+    }
+
+    protected Document renameDocument(Document doc, Map<String,String> renames) {
+        Document renamedDoc = new Document();
+        for (String key : doc.keySet()) {
+            String renamedKey = renames.getOrDefault(key, key);
+            renamedDoc.put(renamedKey, doc.get(key));
         }
-        return document;
+        return renamedDoc;
     }
 
     public Document dbObjectToDocument(DBObject dbObject) {

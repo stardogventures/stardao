@@ -3,6 +3,8 @@ package io.stardog.stardao.validation;
 import com.google.common.collect.ImmutableList;
 import io.stardog.stardao.annotations.Required;
 import io.stardog.stardao.core.Update;
+import io.stardog.stardao.core.field.Field;
+import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.exceptions.DataValidationException;
 
 import javax.validation.ConstraintViolation;
@@ -28,7 +30,7 @@ public class ModelValidator {
                .collect(ImmutableList.toImmutableList());
     }
 
-    public List<ValidationError> getUpdateValidationErrors(Update<?> update, Set<String> updatableFields) {
+    public List<ValidationError> getUpdateValidationErrors(Update<?> update, FieldData fieldData) {
         if (update == null) {
             return ImmutableList.of(ValidationError.of("", "update is null"));
         }
@@ -37,7 +39,7 @@ public class ModelValidator {
 
         // ensure we are only touching @Updatable fields
         for (String field : updateFields) {
-            if (!updatableFields.contains(field)) {
+            if (!fieldData.isUpdatable(field)) {
                 errors.add(ValidationError.of(field, "is not updatable"));
             }
         }
@@ -70,8 +72,8 @@ public class ModelValidator {
         return true;
     }
 
-    public boolean validateUpdate(Update<?> update, Set<String> updatableFields) {
-        List<ValidationError> errors = getUpdateValidationErrors(update, updatableFields);
+    public boolean validateUpdate(Update<?> update, FieldData fieldData) {
+        List<ValidationError> errors = getUpdateValidationErrors(update, fieldData);
         if (!errors.isEmpty()) {
             throw new DataValidationException(errors);
         }

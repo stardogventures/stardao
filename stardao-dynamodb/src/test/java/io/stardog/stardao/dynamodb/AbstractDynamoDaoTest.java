@@ -57,11 +57,11 @@ public class AbstractDynamoDaoTest {
 
     @Test
     public void testGetAnnotatedFields() throws Exception {
-        assertEquals("id", dao.getIdField());
-        assertEquals("createId", dao.getCreatedByField());
-        assertEquals("createAt", dao.getCreatedAtField());
-        assertEquals("updateId", dao.getUpdatedByField());
-        assertEquals("updateAt", dao.getUpdatedAtField());
+        assertEquals("id", dao.getFieldData().getId().getName());
+        assertEquals("createId", dao.getFieldData().getCreatedBy().getName());
+        assertEquals("createAt", dao.getFieldData().getCreatedAt().getName());
+        assertEquals("updateId", dao.getFieldData().getUpdatedBy().getName());
+        assertEquals("updateAt", dao.getFieldData().getUpdatedAt().getName());
     }
 
     @Test
@@ -92,17 +92,17 @@ public class AbstractDynamoDaoTest {
 
     @Test
     public void testToPropertyValue() throws Exception {
-        assertNull(dao.toPropertyValue(null));
+        assertNull(dao.toStorageValue(null));
 
-        assertEquals(1, dao.toPropertyValue(1));
+        assertEquals(1, dao.toStorageValue(1));
 
-        assertEquals("test", dao.toPropertyValue("test"));
+        assertEquals("test", dao.toStorageValue("test"));
 
         UUID id = UUID.randomUUID();
-        assertEquals(id.toString(), dao.toPropertyValue(id));
+        assertEquals(id.toString(), dao.toStorageValue(id));
 
         Instant time = Instant.now();
-        assertEquals(time.toEpochMilli(), dao.toPropertyValue(time));
+        assertEquals(time.toEpochMilli(), dao.toStorageValue(time));
     }
 
     @Test

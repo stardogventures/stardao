@@ -32,6 +32,7 @@ import com.amazonaws.services.dynamodbv2.util.TableUtils;
 import io.stardog.stardao.core.AbstractDao;
 import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
+import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.dynamodb.mapper.ItemMapper;
 import io.stardog.stardao.dynamodb.mapper.JacksonItemMapper;
 import io.stardog.stardao.exceptions.DataNotFoundException;
@@ -55,14 +56,18 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
     private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDynamoDao.class);
 
     public AbstractDynamoDao(Class<M> modelClass, AmazonDynamoDB db, String tableName) {
-        this(modelClass, db, tableName, new JacksonItemMapper<M>(modelClass));
+        super(modelClass);
+        this.db = db;
+        this.tableName = tableName;
+        this.mapper = new JacksonItemMapper<>(modelClass, getFieldData());
+        this.table = new DynamoDB(db).getTable(tableName);
     }
 
     public AbstractDynamoDao(Class<M> modelClass, AmazonDynamoDB db, String tableName, ItemMapper<M> mapper) {
         super(modelClass);
-        this.mapper = mapper;
-        this.tableName = tableName;
         this.db = db;
+        this.tableName = tableName;
+        this.mapper = mapper;
         this.table = new DynamoDB(db).getTable(tableName);
     }
 
@@ -105,7 +110,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
      * @return  id converted to a primary key
      */
     protected PrimaryKey toPrimaryKey(K id) {
-        return new PrimaryKey(getIdField(), toPropertyValue(id));
+        return new PrimaryKey(getFieldData().getId().getStorageName(), toStorageValue(id));
     }
 
     /**
@@ -113,7 +118,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
      * @param val   value
      * @return  the value, possibly converted to string
      */
-    protected Object toPropertyValue(Object val) {
+    protected Object toStorageValue(Object val) {
         if (val == null) {
             return null;
         }
@@ -222,9 +227,9 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
                 .withValueMap(new ValueMap()
                                 .with(":value", value)
                 );
-        Object excludeIdValue = toPropertyValue(excludeId);
+        Object excludeIdValue = toStorageValue(excludeId);
         for (Item item : index.query(spec)) {
-            Object itemId = toPropertyValue(item.get(getIdField()));
+            Object itemId = toStorageValue(item.get(getFieldData().getId().getStorageName()));
             if (!itemId.equals(excludeIdValue)) {
                 return false;
             }
@@ -244,10 +249,10 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         Item item = toCreateItem(model, createAt, creatorId);
         PutItemSpec spec = new PutItemSpec()
                 .withItem(item);
-        if (getIdField() != null) {
+        if (getFieldData().getId() != null) {
             spec = spec.withConditionExpression("attribute_not_exists(#id)")
                     .withNameMap(new NameMap()
-                                    .with("#id", getIdField())
+                                    .with("#id", getFieldData().getId().getStorageName())
                     );
         }
         table.putItem(spec);
@@ -265,18 +270,19 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         Item item = mapper.toItem(model);
 
         // add the @Id field (primary key)
-        if (getIdField() != null && item.get(getIdField()) == null) {
-            item.with(getIdField(), toPropertyValue(generatePrimaryKeyValue()));
+        Field id = getFieldData().getId();
+        if (id != null && item.get(id.getStorageName()) == null) {
+            item.with(id.getStorageName(), toStorageValue(generatePrimaryKeyValue()));
         }
 
         // add the @CreatedAt and @CreatedBy fields
-        String createdByField = getCreatedByField();
-        if (createdByField != null && item.get(createdByField) == null && creatorId != null) {
-            item.with(createdByField, toPropertyValue(creatorId));
+        Field createdByField = getFieldData().getCreatedBy();
+        if (createdByField != null && item.get(createdByField.getStorageName()) == null && creatorId != null) {
+            item.with(createdByField.getStorageName(), toStorageValue(creatorId));
         }
-        String createdAt = getCreatedAtField();
-        if (createdAt != null && item.get(createdAt) == null && createAt != null) {
-            item.with(createdAt, toPropertyValue(createAt));
+        Field createdAtField = getFieldData().getCreatedAt();
+        if (createdAtField != null && item.get(createdAtField.getStorageName()) == null && createAt != null) {
+            item.with(createdAtField.getStorageName(), toStorageValue(createAt));
         }
 
         return item;
@@ -325,19 +331,19 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         Item setFields = mapper.toItem(update.getSetObject());
 
         // add the @UpdatedBy and @UpdatedAt fields
-        String updatedByField = getUpdatedByField();
+        Field updatedByField = getFieldData().getUpdatedBy();
         if (updatedByField != null && updaterId != null) {
-            setFields = setFields.with(updatedByField, toPropertyValue(updaterId));
+            setFields = setFields.with(updatedByField.getStorageName(), toStorageValue(updaterId));
         }
-        String updatedAtField = getUpdatedAtField();
+        Field updatedAtField = getFieldData().getUpdatedAt();
         if (updatedAtField != null && updateAt != null) {
-            setFields = setFields.with(updatedAtField, toPropertyValue(updateAt));
+            setFields = setFields.with(updatedAtField.getStorageName(), toStorageValue(updateAt));
         }
 
         for (Map.Entry<String,Object> e : setFields.asMap().entrySet()) {
             String key = e.getKey();
             nameMap.put("#" + key, key);
-            valueMap.put(":" + key, toPropertyValue(e.getValue()));
+            valueMap.put(":" + key, toStorageValue(e.getValue()));
             updateExpression += "#" + key + " = :" + key + ", ";
         }
         if (updateExpression.length() > 0) {

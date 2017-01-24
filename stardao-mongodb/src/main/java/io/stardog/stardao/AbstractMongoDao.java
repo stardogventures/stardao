@@ -1,11 +1,12 @@
 package io.stardog.stardao;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexModel;
 import io.stardog.stardao.core.AbstractDao;
 import io.stardog.stardao.core.Update;
+import io.stardog.stardao.core.field.Field;
+import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.mapper.DocumentMapper;
 import io.stardog.stardao.mapper.JacksonDocumentMapper;
 import org.bson.Document;
@@ -13,7 +14,9 @@ import org.bson.types.ObjectId;
 
 import java.sql.Date;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
@@ -24,9 +27,27 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
     public AbstractMongoDao(Class<M> modelClass, MongoCollection<Document> collection) {
         super(modelClass);
         this.collection = collection;
-        this.mapper = new JacksonDocumentMapper<M>(modelClass,
+        this.mapper = new JacksonDocumentMapper<>(modelClass,
                 JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER,
-                ImmutableMap.of(getIdField(), ID_FIELD));
+                getFieldData());
+    }
+
+    /**
+     * MongoDB always stores the id field as _id, so any id field should automatically get assigned @StoragePath("_id")
+     * @return FieldData
+     */
+    @Override
+    protected FieldData generateFieldData() {
+        FieldData fieldData = super.generateFieldData();
+        Field id = fieldData.getId();
+        if (id != null) {
+            id = id.toBuilder().storageName(ID_FIELD).build();
+            Map<String,Field> all = new HashMap<>();
+            all.putAll(fieldData.getAll());
+            all.put(id.getName(), id);
+            fieldData = fieldData.toBuilder().id(id).all(all).build();
+        }
+        return fieldData;
     }
 
     public AbstractMongoDao(Class<M> modelClass, MongoCollection<Document> collection, DocumentMapper<M> mapper) {
@@ -56,11 +77,12 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         if (doc.get(ID_FIELD) == null) {
             doc.put(ID_FIELD, generateId());
         }
-        if (createAt != null && getCreatedAtField() != null) {
-            doc.put(getCreatedAtField(), Date.from(createAt));
+        FieldData fieldData = getFieldData();
+        if (createAt != null && fieldData.getCreatedAt() != null) {
+            doc.put(fieldData.getCreatedAt().getStorageName(), Date.from(createAt));
         }
-        if (createBy != null && getCreatedByField() != null) {
-            doc.put(getCreatedByField(), createBy);
+        if (createBy != null && fieldData.getCreatedBy() != null) {
+            doc.put(fieldData.getCreatedBy().getStorageName(), createBy);
         }
         collection.insertOne(doc);
         return mapper.toObject(doc);
@@ -85,11 +107,12 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         Document doc = new Document();
 
         Document set = mapper.toDocument(update.getSetObject());
-        if (updateAt != null && getUpdatedAtField() != null) {
-            set.put(getUpdatedAtField(), Date.from(updateAt));
+        FieldData fieldData = getFieldData();
+        if (updateAt != null && fieldData.getUpdatedAt() != null) {
+            set.put(fieldData.getUpdatedAt().getStorageName(), Date.from(updateAt));
         }
-        if (updateBy != null && getUpdatedByField() != null) {
-            set.put(getUpdatedByField(), updateBy);
+        if (updateBy != null && fieldData.getUpdatedBy() != null) {
+            set.put(fieldData.getUpdatedBy().getStorageName(), updateBy);
         }
 
         Document unset = new Document();

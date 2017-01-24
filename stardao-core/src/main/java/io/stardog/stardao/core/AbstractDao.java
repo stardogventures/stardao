@@ -1,100 +1,22 @@
 package io.stardog.stardao.core;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import io.stardog.stardao.annotations.CreatedAt;
-import io.stardog.stardao.annotations.CreatedBy;
-import io.stardog.stardao.annotations.FieldName;
-import io.stardog.stardao.annotations.Id;
-import io.stardog.stardao.annotations.Updatable;
-import io.stardog.stardao.annotations.UpdatedAt;
-import io.stardog.stardao.annotations.UpdatedBy;
+import io.stardog.stardao.core.field.FieldData;
+import io.stardog.stardao.core.field.FieldScanner;
 import io.stardog.stardao.exceptions.DataNotFoundException;
 
-import java.lang.reflect.Method;
 import java.time.Instant;
-import java.util.Map;
-import java.util.Set;
 
 public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
     private final Class<M> modelClass;
-    private final String idField;
-    private final String createdByField;
-    private final String createdAtField;
-    private final String updatedByField;
-    private final String updatedAtField;
-    private final Set<String> updatableFields;
-    private final Map<String,String> renameFields;
+    private final FieldData fieldData;
 
     public AbstractDao(Class<M> modelClass) {
         this.modelClass = modelClass;
-
-        ImmutableSet.Builder<String> updatableFields = ImmutableSet.builder();
-        ImmutableMap.Builder<String,String> renameFields = ImmutableMap.builder();
-        String idField = null;
-        String createdByField = null;
-        String createdAtField = null;
-        String updatedByField = null;
-        String updatedAtField = null;
-
-        for (Method method : modelClass.getDeclaredMethods()) {
-            String field = toFieldName(method);
-            if (field != null) {
-                if (method.isAnnotationPresent(Updatable.class)) {
-                    updatableFields.add(field);
-                }
-                if (method.isAnnotationPresent(Id.class)) {
-                    if (idField != null) {
-                        throw new IllegalStateException("Multiple @Id annotations present on " + idField + " and " + field);
-                    }
-                    idField = field;
-                }
-                if (method.isAnnotationPresent(CreatedAt.class)) {
-                    if (createdAtField != null) {
-                        throw new IllegalStateException("Multiple @CreatedAt annotations present on " + createdByField + " and " + field);
-                    }
-                    createdAtField = field;
-                }
-                if (method.isAnnotationPresent(CreatedBy.class)) {
-                    if (createdByField != null) {
-                        throw new IllegalStateException("Multiple @CreatedBy annotations present on " + createdByField + " and " + field);
-                    }
-                    createdByField = field;
-                }
-                if (method.isAnnotationPresent(UpdatedAt.class)) {
-                    if (updatedAtField != null) {
-                        throw new IllegalStateException("Multiple @UpdatedAt annotations present on " + createdByField + " and " + field);
-                    }
-                    updatedAtField = field;
-                }
-                if (method.isAnnotationPresent(UpdatedBy.class)) {
-                    if (updatedByField != null) {
-                        throw new IllegalStateException("Multiple @UpdatedBy annotations present on " + createdByField + " and " + field);
-                    }
-                    updatedByField = field;
-                }
-                if (method.isAnnotationPresent(FieldName.class)) {
-                    String rename = method.getAnnotation(FieldName.class).value();
-                    renameFields.put(field, rename);
-                }
-            }
-        }
-        this.idField = idField;
-        this.createdByField = createdByField;
-        this.createdAtField = createdAtField;
-        this.updatedByField = updatedByField;
-        this.updatedAtField = updatedAtField;
-        this.updatableFields = updatableFields.build();
-        this.renameFields = renameFields.build();
+        this.fieldData = generateFieldData();
     }
 
-    protected String toFieldName(Method method) {
-        if (method.getName().startsWith("get")) {
-            String field = method.getName().substring(3);
-            return field.substring(0, 1).toLowerCase() + field.substring(1);
-        } else {
-            return null;
-        }
+    protected FieldData generateFieldData() {
+        return new FieldScanner().scanAnnotations(modelClass);
     }
 
     @Override
@@ -102,32 +24,8 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
         return modelClass;
     }
 
-    public String getIdField() {
-        return idField;
-    }
-
-    public String getCreatedByField() {
-        return createdByField;
-    }
-
-    public String getCreatedAtField() {
-        return createdAtField;
-    }
-
-    public String getUpdatedByField() {
-        return updatedByField;
-    }
-
-    public String getUpdatedAtField() {
-        return updatedAtField;
-    }
-
-    public Set<String> getUpdatableFields() {
-        return updatableFields;
-    }
-
-    public Map<String, String> getRenameFields() {
-        return renameFields;
+    public FieldData getFieldData() {
+        return fieldData;
     }
 
     public String getDisplayModelName() {

@@ -37,7 +37,7 @@ Place your annotations over the getter methods. All annotations are optional, bu
 - ``@UpdatedAt`` - field will be timestamped on update
 - ``@UpdatedBy`` - field will be marked with the id of the user who updated
 - ``@Updatable`` - marks a field as permissible to change in a user-generated partial update. For example, for a user, `email` might take updates, but `lastLoginTime` might not.
-- ``@FieldName("name")`` - store a field under a different name in the database
+- ``@StorageName("name")`` - store a field under a different name in the database
 - ``@NotNull(groups = Required.class)`` - mark a field as required
 
 You are also encouraged to use Hibernate Validator annotations, such as `@Email` or `@Min`.

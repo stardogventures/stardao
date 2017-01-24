@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -26,6 +27,12 @@ public class AbstractMongoDaoTest {
         Fongo fongo = new Fongo("fake-mongo");
         dao = new TestUserDao(fongo.getMongo().getDatabase("test-mongo").getCollection("test-user"));
 
+    }
+
+    @Test
+    public void testIdHasCorrectStorageName() throws Exception {
+        assertEquals("id", dao.getFieldData().getId().getName());
+        assertEquals("_id", dao.getFieldData().getId().getStorageName());
     }
 
     @Test
@@ -51,6 +58,8 @@ public class AbstractMongoDaoTest {
         Instant now = Instant.now();
         ObjectId creatorId = new ObjectId();
         TestUser created = dao.create(TestUser.builder().name("Ian").build(), now, creatorId);
+        assertNotNull(created.getId());
+        assertEquals("Ian", created.getName());
         assertEquals(creatorId, created.getCreateId());
         assertEquals(now, created.getCreateAt());
     }
@@ -78,6 +87,7 @@ public class AbstractMongoDaoTest {
     @Test
     public void testUpdateAndReturn() throws Exception {
         TestUser created = dao.create(TestUser.builder().name("Ian").build());
+        System.out.println(created);
 
         ObjectId updateBy = new ObjectId();
         Instant now = Instant.now();
@@ -86,8 +96,9 @@ public class AbstractMongoDaoTest {
                 TestUser.builder().name("Bob").build(),
                 ImmutableSet.of("name"));
         TestUser prev = dao.updateAndReturn(created.getId(), update, now, updateBy);
+        System.out.println(prev);
 
-        assertEquals(prev, created);
+        assertEquals(created, prev);
 
         TestUser load = dao.load(created.getId());
         assertEquals("Bob", load.getName());

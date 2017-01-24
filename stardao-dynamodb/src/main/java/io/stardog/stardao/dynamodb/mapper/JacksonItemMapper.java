@@ -6,19 +6,25 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.stardog.stardao.core.field.Field;
+import io.stardog.stardao.core.field.FieldData;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class JacksonItemMapper<M> implements ItemMapper<M> {
     private final Class<M> modelClass;
+    private final FieldData fieldData;
     private final ObjectMapper objectMapper;
+    private final Map<String,String> objectToItemFieldRenames;
+    private final Map<String,String> itemToObjectFieldRenames;
 
-    public JacksonItemMapper(Class<M> modelClass) {
-        this(modelClass, new ObjectMapper()
+    public JacksonItemMapper(Class<M> modelClass, FieldData fieldData) {
+        this(modelClass, fieldData, new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true)
                 .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
@@ -26,9 +32,18 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
                 .registerModule(new JavaTimeModule()));
     }
 
-    public JacksonItemMapper(Class<M> modelClass, ObjectMapper objectMapper) {
+    public JacksonItemMapper(Class<M> modelClass, FieldData fieldData, ObjectMapper objectMapper) {
         this.modelClass = modelClass;
+        this.fieldData = fieldData;
         this.objectMapper = objectMapper;
+        this.objectToItemFieldRenames = new HashMap<>();
+        this.itemToObjectFieldRenames = new HashMap<>();
+        for (Field field : fieldData.getAll().values()) {
+            if (!field.getStorageName().equals(field.getName())) {
+                objectToItemFieldRenames.put(field.getName(), field.getStorageName());
+                itemToObjectFieldRenames.put(field.getStorageName(), field.getName());
+            }
+        }
     }
 
     public ObjectMapper getObjectMapper() {
@@ -44,9 +59,7 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
         if (item == null) {
             return null;
         }
-        // not working with millisecond timestamps for some reason:
-        //    return OBJECT_MAPPER.convertValue(item.asMap(), toValueType);
-        // so do it the slower way:
+        item = renameItem(item, itemToObjectFieldRenames);
         Map<String,Object> map = item.asMap();
         try {
             String json = objectMapper.writeValueAsString(map);
@@ -77,9 +90,20 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
                 item.removeAttribute(attrName);
             }
 
+            item = renameItem(item, objectToItemFieldRenames);
             return item;
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Unable to convert " + object);
         }
+    }
+
+    protected Item renameItem(Item item, Map<String,String> renames) {
+        Map<String,Object> map = item.asMap();
+        Item renamedItem = new Item();
+        for (String key : map.keySet()) {
+            String renamedKey = renames.getOrDefault(key, key);
+            renamedItem.with(renamedKey, item.get(key));
+        }
+        return renamedItem;
     }
 }

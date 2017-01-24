@@ -17,6 +17,6 @@ public class DefaultValidator {
     }
 
     public static <T> boolean validateUpdate(Update<T> update, AbstractDao<T,?,?> dao) {
-        return VALIDATOR.validateUpdate(update, dao.getUpdatableFields());
+        return VALIDATOR.validateUpdate(update, dao.getFieldData());
     }
 }

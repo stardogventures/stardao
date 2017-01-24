@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.stardog.stardao.TestAddress;
 import io.stardog.stardao.TestUser;
+import io.stardog.stardao.core.field.Field;
+import io.stardog.stardao.core.field.FieldData;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Before;
@@ -13,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -22,7 +25,9 @@ public class JacksonDocumentMapperTest {
 
     @Before
     public void setUp() throws Exception {
-        mapper = new JacksonDocumentMapper<>(TestUser.class, JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER, ImmutableMap.of("id", "_id"));
+        Map<String,Field> fields = ImmutableMap.of("id", Field.builder().name("id").storageName("_id").updatable(false).build());
+        FieldData fieldData = FieldData.builder().all(fields).build();
+        mapper = new JacksonDocumentMapper<>(TestUser.class, JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER, fieldData);
     }
 
     @Test

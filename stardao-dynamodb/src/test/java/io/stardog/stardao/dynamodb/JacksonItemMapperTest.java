@@ -1,6 +1,8 @@
 package io.stardog.stardao.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.google.common.collect.ImmutableMap;
+import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.dynamodb.mapper.JacksonItemMapper;
 import org.junit.Test;
 
@@ -13,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class JacksonItemMapperTest {
     @Test
     public void testToItem() throws Exception {
-        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class);
+        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().all(ImmutableMap.of()).build());
 
         UUID id = UUID.randomUUID();
         Instant at = Instant.now();
@@ -29,7 +31,7 @@ public class JacksonItemMapperTest {
 
     @Test
     public void testToObject() throws Exception {
-        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class);
+        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().all(ImmutableMap.of()).build());
 
         TestObject test = mapper.getObjectMapper().readValue("{\"at\":1479334772334}", TestObject.class);
         assertEquals("2016-11-16T22:19:32.334Z", test.getAt().toString());
