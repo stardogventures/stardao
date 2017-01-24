@@ -16,7 +16,8 @@ You also might like these DAO superclasses if:
   - You are switching back and forth between MongoDB and DynamoDB and want a common idiom
   - You're using Dropwizard, or something else that uses Jersey and Jackson
   - You want a good way to handle partial updates (PATCH requests) coming from users
-  
+  - You want to easily set the user id and timestamp on creation and update
+
 ### How To Use Stardao
 
 #### Define POJOs
@@ -48,7 +49,7 @@ Extend either the `AbstractMongoDao` or `AbstractDynamoDao` superclass. The type
 
 - `M`: Model Class
 - `K`: Primary key type (type of the `@Id` field)
-- `I`: Foreign key type for user updates
+- `I`: Foreign key type for user ids (type of the `@CreatedBy` and `@UpdatedBy` fields)
 
 For example, if you have a MongoDB collection called `Org` to track organizations, that uses `Long `as the org `_id` and `ObjectId` as the user id type:
 
@@ -105,7 +106,7 @@ The two superclasses have some different protected methods that you can use to s
 
 Both superclasses have a mapper (an ItemMapper for DynamoDB and a DocumentMapper for Mongo) which you can get at with a call to `getMapper()`. You can convert the database-returned objects to your POJO with `getMapper().toObject(databaseObject)`
 
-#### What about save()?
+#### Where's save()?
 
 In the author's opinion, a save() (which typically overwrites the whole object), is fairly dangerous, and should be avoided in favor of partial updates, which are more performant and avoid potential race conditions.
 
@@ -117,7 +118,7 @@ Again purely in the author's opinion, all queries should be hand-written and liv
 
 The author is also not fond of layering a special query syntax or DSL on top of the native driver. These tend to just add indirection, and the native syntax is usually just as easy to learn.
 
-So you are advised to simply write find* methods on your subclass, using the specific functionality of the native drivers.
+So you are advised to simply write findX methods on your subclass, using the specific functionality of the native drivers.
 
 #### Validation
 
@@ -125,7 +126,7 @@ The ``ModelValidator`` class provides a shortcut to Hibernate Validation that al
 
 - `validateModel()` validates every field on the model
 - `validateRequired()` validates using the `Required` group
-- `validateUpdate()` validates an `Update`, ensuring that the `Update` is only touching `Updatable` fields and that it is not unsetting any `Required` fields or setting any fields to bad values
+- `validateUpdate()` validates an `Update`, ensuring that the `Update` is only touching `Updatable` fields and that it is not unsetting any `Required` fields or setting any fields to invalid values
 
 In each case the validate method will throw a runtime `DataValidationException` if it fails, and return true if it succeeds.
 
@@ -141,10 +142,10 @@ A simple update resource method might look like:
 @PATCH
 @Path("/org/{id}")
 public Response updateOrg(@Auth User user, @PathParam("id") ObjectId id, Update<Org> update) {
-    DefaultValidator.validateUpdate(update);
+    DefaultValidator.validateUpdate(update, orgDao.getFieldData());
     // perform ACL checks here...
-	orgDao.update(id, update, user.getId());
-	return Response.noContent.build();
+    orgDao.update(id, update, user.getId());
+    return Response.noContent.build();
 }
 ```
 
