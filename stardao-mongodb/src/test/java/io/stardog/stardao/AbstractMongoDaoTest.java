@@ -2,6 +2,7 @@ package io.stardog.stardao;
 
 import com.github.fakemongo.Fongo;
 import com.google.common.collect.ImmutableSet;
+import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
 import io.stardog.stardao.exceptions.DataNotFoundException;
 import org.bson.Document;
@@ -63,6 +64,61 @@ public class AbstractMongoDaoTest {
         } catch (DataNotFoundException e) {
             assertEquals("TestUser not found", e.getMessage());
         }
+    }
+
+    @Test
+    public void testFindWithSkipLimitPagination() throws Exception {
+        for (int i=0; i < 100; i++) {
+            dao.create(TestUser.builder().name("Bob " + String.format("%02d", i)).active(true).build());
+        }
+        Document query = new Document("active", true);
+        Document sort = new Document("name", 1);
+
+        Results<TestUser,Integer> page1 = dao.findWithSkipLimitPagination(dao.getCollection().find(query).sort(sort), 0, 50);
+        assertEquals(50, page1.getData().size());
+        assertEquals("Bob 00", page1.getData().get(0).getName());
+        assertEquals("Bob 49", page1.getData().get(49).getName());
+        assertEquals(new Integer(50), page1.getNext().get());
+
+        Results<TestUser,Integer> page2 = dao.findWithSkipLimitPagination(dao.getCollection().find(query).sort(sort), 50, 50);
+        assertEquals(50, page2.getData().size());
+        assertEquals("Bob 50", page2.getData().get(0).getName());
+        assertEquals("Bob 99", page2.getData().get(49).getName());
+        assertFalse(page2.getNext().isPresent());
+
+        page2 = dao.findWithSkipLimitPagination(dao.getCollection().find(query).sort(sort), 50, 1000);
+        assertEquals(50, page2.getData().size());
+        assertEquals("Bob 50", page2.getData().get(0).getName());
+        assertEquals("Bob 99", page2.getData().get(49).getName());
+        assertFalse(page2.getNext().isPresent());
+    }
+
+    @Test
+    public void testFindWithFieldPagination() throws Exception {
+        for (int i=0; i < 100; i++) {
+            dao.create(TestUser.builder().name("Bob " + String.format("%02d", i)).active(true).build());
+        }
+        Document query = new Document("active", true);
+        Document sort = new Document("name", 1);
+
+        Results<TestUser,String> page1 = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
+        assertEquals(50, page1.getData().size());
+        assertEquals("Bob 00", page1.getData().get(0).getName());
+        assertEquals("Bob 49", page1.getData().get(49).getName());
+        assertEquals("Bob 50", page1.getNext().get());
+
+        query = new Document("active", true).append("name", new Document("$gte", "Bob 50"));
+        Results<TestUser,String> page2 = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
+        assertEquals(50, page2.getData().size());
+        assertEquals("Bob 50", page2.getData().get(0).getName());
+        assertEquals("Bob 99", page2.getData().get(49).getName());
+        assertFalse(page2.getNext().isPresent());
+
+        page2 = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 1000);
+        assertEquals(50, page2.getData().size());
+        assertEquals("Bob 50", page2.getData().get(0).getName());
+        assertEquals("Bob 99", page2.getData().get(49).getName());
+        assertFalse(page2.getNext().isPresent());
     }
 
     @Test

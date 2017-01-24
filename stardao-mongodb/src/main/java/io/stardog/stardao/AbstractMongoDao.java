@@ -1,9 +1,11 @@
 package io.stardog.stardao;
 
 import com.google.common.collect.ImmutableList;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexModel;
 import io.stardog.stardao.core.AbstractDao;
+import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
@@ -78,6 +80,79 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             throw new DataNotFoundException(getDisplayModelName() + " not found");
         }
         return mapper.toObject(doc);
+    }
+
+    /**
+     * Given a FindIterable query, add skip and limit to the query and return a resultset. The results will have
+     * a next integer as the next "skip" value to use, or empty optional if we've exhausted results.
+     * @param iterable  query
+     * @param skip  number of results to skip
+     * @param limit number of results to limit
+     * @return  results containing up to limit objects found in the query
+     */
+    protected Results<M, Integer> findWithSkipLimitPagination(FindIterable<Document> iterable, int skip, int limit) {
+        ImmutableList.Builder<M> builder = ImmutableList.builder();
+        M mostRecentObject = null;
+
+        // query for one more object than we actually need, in order to determine whether there is a "next" page
+        int foundCount = 0;
+        for (Document doc : iterable.skip(skip).limit(limit+1)) {
+            if (mostRecentObject != null) {
+                builder.add(mostRecentObject);
+            }
+            mostRecentObject = mapper.toObject(doc);
+            foundCount++;
+        }
+
+        if (foundCount <= limit) {
+            builder.add(mostRecentObject);
+            return Results.of(builder.build());
+        } else {
+            return Results.of(builder.build(), skip+limit);
+        }
+    }
+
+    /**
+     * Given a FindIterable query, paginate by using a field value as the "next". The iterable should already contain
+     * a query that performs the appropriate comparison on the next (normally a $gte comparison)
+     *
+     * Because it avoids the use of the inefficient "skip", this type of pagination will be much faster and should be
+     * preferred whenever traversing an index.
+     *
+     * For example:
+     *    Document query = new Document("email", new Document("$gte", "bob@example.com"));
+     *    Document sort = new Document("email", 1);
+     *    findWithFieldPagination(getCollection.find(query).sort(sort), "email", String.class, 20)
+     * Will return the next 20 results starting with "bob@example.com"
+     *
+     * @param iterable  query
+     * @param nextField the name of the field to extract as the "next" item
+     * @param nextFieldType the class of the expected value of the "next" field (*as it is stored in MongoDB*)
+     * @param limit number of results to limit
+     * @return  results containing up to limit results in the query, and the value of the "next" field
+     */
+    protected <N> Results<M, N> findWithFieldPagination(FindIterable<Document> iterable, String nextField, Class<N> nextFieldType, int limit) {
+        ImmutableList.Builder<M> builder = ImmutableList.builder();
+        M mostRecentObject = null;
+        N mostRecentNext = null;
+
+        // query for one more object than we actually need, in order to determine whether there is a "next" page
+        int foundCount = 0;
+        for (Document doc : iterable.limit(limit+1)) {
+            if (mostRecentObject != null) {
+                builder.add(mostRecentObject);
+            }
+            mostRecentNext = doc.get(nextField, nextFieldType);
+            mostRecentObject = mapper.toObject(doc);
+            foundCount++;
+        }
+
+        if (foundCount <= limit) {
+            builder.add(mostRecentObject);
+            return Results.of(builder.build());
+        } else {
+            return Results.of(builder.build(), mostRecentNext);
+        }
     }
 
     @Override
