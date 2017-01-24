@@ -63,6 +63,10 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         return collection;
     }
 
+    protected DocumentMapper<M> getMapper() {
+        return mapper;
+    }
+
     public Object generateId() {
         return new ObjectId();
     }
@@ -138,7 +142,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
 
         // query for one more object than we actually need, in order to determine whether there is a "next" page
         int foundCount = 0;
-        for (Document doc : iterable.limit(limit+1)) {
+        for (Document doc : iterable.limit(limit + 1)) {
             if (mostRecentObject != null) {
                 builder.add(mostRecentObject);
             }

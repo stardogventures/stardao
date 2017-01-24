@@ -7,6 +7,7 @@ import io.stardog.stardao.core.Update;
 import io.stardog.stardao.exceptions.DataNotFoundException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.geojson.Point;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -197,6 +198,14 @@ public class AbstractMongoDaoTest {
 
         Optional<TestUser> load = dao.loadOpt(created.getId());
         assertFalse(load.isPresent());
+    }
+
+    @Test
+    public void testCanStoreGeoJson() throws Exception {
+        TestUser created = dao.create(TestUser.builder().location(new Point(-73.9857, 40.7484)).build());
+
+        TestUser load = dao.load(created.getId());
+        assertEquals(-73.9857, load.getLocation().getCoordinates().getLongitude(), .00001);
     }
 
     @Test

@@ -10,6 +10,7 @@ import io.stardog.stardao.annotations.Id;
 import io.stardog.stardao.annotations.UpdatedAt;
 import io.stardog.stardao.annotations.UpdatedBy;
 import org.bson.types.ObjectId;
+import org.geojson.Point;
 
 import javax.annotation.Nullable;
 import java.time.Instant;
@@ -61,6 +62,9 @@ public abstract class TestUser {
     public abstract Map<String,TestAddress> getAddressesByRegion();
 
     @Nullable
+    public abstract Point getLocation();
+
+    @Nullable
     @CreatedAt
     public abstract Instant getCreateAt();
 
@@ -96,6 +100,7 @@ public abstract class TestUser {
         public abstract Builder friends(List<ObjectId> friends);
         public abstract Builder addresses(List<TestAddress> addresses);
         public abstract Builder addressesByRegion(Map<String,TestAddress> addresses);
+        public abstract Builder location(Point point);
         public abstract Builder createAt(Instant at);
         public abstract Builder createId(ObjectId id);
         public abstract Builder updateAt(Instant at);
