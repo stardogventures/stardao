@@ -59,7 +59,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         this.mapper = mapper;
     }
 
-    public MongoCollection<Document> getCollection() {
+    protected MongoCollection<Document> getCollection() {
         return collection;
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         return mapper;
     }
 
-    public Object generateId() {
+    protected Object generateId() {
         return new ObjectId();
     }
 
