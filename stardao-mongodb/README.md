@@ -8,13 +8,17 @@ This library is based on the post-3.0 Java driver and therefore uses `MongoColle
 
 MongoDB mandates that every object have an _id field. Therefore, whichever field you have marked with `@Id` is automatically treated as if you had annotated `@StorageField("_id")` -- it will always be stored as `_id` regardless of what the POJO field name is.
 
-### DocumentMapper
-
-A call to `getMapper()` will return a DocumentMapper which can convert POJOs to Documents and vice versa. It will obey field renaming rules.
-
 ### Protected methods
 
-The following protected methods can be useful when writing your Dao subclasses:
+The following protected methods can be useful when writing your Dao subclass implementations.
+
+#### getCollection()
+
+Get ahold of the actual `MongoCollection` object with a call to `getCollection()`. From there you're off to the races with the full functionality of the Java driver.
+
+#### getMapper()
+
+A call to `getMapper()` will return a `DocumentMapper` which can convert POJOs to Documents and vice versa. It will respect field renaming rules that have been set with `@StorageName` annotations.
 
 #### loadByQuery()
 
