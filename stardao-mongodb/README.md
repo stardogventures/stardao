@@ -58,13 +58,13 @@ This will perform much better than using "skip" because we leverage the index on
 In some circumstances, you have to use skip. Be advised that MongoDB will traverse the documents it is "skipping", so you might really kill performance with large skip values.
 
 ```
-public Results<User,Integer> findByOrgId(ObjectId orgId, int skip, int limit) {
+public Results<User,Integer> findByOrgId(ObjectId orgId, int from, int limit) {
     Document query = new Document("orgId", orgId);
     Document sort = new Document("email", 1);
-    return findWithSkipLimitPagination(getCollection().find(query).sort(sort), skip, limit);
+    return findWithSkipLimitPagination(getCollection().find(query).sort(sort), from, limit);
 }
 ```
 
-In this case, the next skip value will be placed in the "next" field of the Results.
+In this case, the next skip value to use will be placed in the `next` field of the `Results`.
 
-The client can perform the exact same approach of examining the "next" field and passing it as the following skip.
+The client can perform the exact same approach of examining the `next` field and passing it as the following `from`.
