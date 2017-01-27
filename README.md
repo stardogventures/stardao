@@ -2,7 +2,7 @@
 
 Simple immutable-friendly base DAO classes for MongoDB and DynamoDB
 
-### Why use this?
+## Why use this?
 
 These Data Access Object (DAO) superclasses are a good choice if:
 
@@ -18,9 +18,9 @@ You also might like these DAO superclasses if:
   - You want a good way to handle partial updates (PATCH requests) coming from users
   - You want to easily set the user id and timestamp on creation and update
 
-### How To Use Stardao
+## How To Use Stardao
 
-#### Define POJOs
+### Define POJOs
 
 Define your basic POJO entity model classes however you like. They can be immutable or not, as you prefer. The classes must be capable of being de/serialized with [Jackson](https://github.com/FasterXML/jackson), and they must use getters for field access.
 
@@ -28,7 +28,7 @@ The classes can be subclasses, but they should not derive fields from parents (t
 
 Personally, the author prefers using [AutoValue](https://github.com/google/auto/blob/master/value/userguide/index.md) with builders, but it's up to you.
 
-#### Annotations
+### Annotations
 
 Place your annotations over the getter methods. All annotations are optional, but you should normally use `@Id`. If `@Id` is not present, but a `getId()` method is present, Stardao will assume that that's the id.
 
@@ -43,27 +43,26 @@ Place your annotations over the getter methods. All annotations are optional, bu
 
 You are also encouraged to use Hibernate Validator annotations, such as `@Email` or `@Min`.
 
-#### Define Your Dao
+### Define Your Dao
 
 Extend either the `AbstractMongoDao` or `AbstractDynamoDao` superclass. The type parameters are, in order:
 
 - `M`: Model Class
 - `K`: Primary key type (type of the `@Id` field)
-- `I`: Foreign key type for user ids (type of the `@CreatedBy` and `@UpdatedBy` fields)
+- `I`: User-id foreign key type (type of the `@CreatedBy` and `@UpdatedBy` fields)
 
-For example, if you have a MongoDB collection called `Org` to track organizations, that uses `Long `as the org `_id` and `ObjectId` as the user id type:
+For example, if you have a MongoDB collection called `Org` to track organizations, that uses `Long `as the org `_id` and `ObjectId` as the associated user id type:
 
 ```
 public class OrgDao extends AbstractMongoDao<Org,Long,ObjectId> {
 ```
 
-#### Write a constructor
+### Write a constructor
 
 Typically the constructor takes the appropriate connection object from the driver and calls the superclass. For example, for MongoDB:
 
 ```
 public class OrgDao extends AbstractMongoDao<Org,Long,ObjectId> {
-    @Inject
     public OrgDao(MongoDatabase db) {
         super(Org.class, db.getCollection("org"));
     }
@@ -73,13 +72,12 @@ For DynamoDB:
 
 ```
 public class OrgDao extends AbstractDynamoDao<Org,Long,UUID> {
-    @Inject
     public OrgDao(DynamoDB db) {
         super(Org.class, db, "org");
     }
 ```
 
-#### What you get for free
+### What you get for free
 
 Every Dao automatically comes with the following public methods:
 
@@ -93,26 +91,26 @@ Every Dao automatically comes with the following public methods:
 - ``initTable()`` - initialize the table and ensure indexes (never destructive of data)
 - ``dropTable()`` - drop the whole table
 
-#### Write your methods
+### Write your methods
 
-With the boring CRUD out of the way, write methods specific to the model -- for example:
+With the boring CRUD out of the way, write methods specific to the model -- for example, you might use the conventions:
 
 - ``loadByX`` queries that return an object by fields other than the id
 - ``findByX`` queries that return ``Results<M,K>`` objects
 - ``updateX`` methods that perform various updates
-- Anything else you want
+- Anything else you want -- the above are just suggestions
 
-The two superclasses have some different protected methods that you can use to simplify writing queries.
+The two superclasses (`AbstractDynamoDao` and `AbstractMongoDao`) have some different protected methods that you can use to simplify writing queries.
 
 Both superclasses have a mapper (an ItemMapper for DynamoDB and a DocumentMapper for Mongo) which you can get at with a call to `getMapper()`. You can convert the database-returned objects to your POJO with `getMapper().toObject(databaseObject)`
 
-#### Where's save()?
+### Where's save()?
 
 In the author's opinion, a save() (which typically overwrites the whole object), is fairly dangerous, and should be avoided in favor of partial updates, which are more performant and avoid potential race conditions.
 
 Of course, if you want to add a save() to your Dao subclasses, nothing's stopping you from writing one.
 
-#### What about arbitrary queries?
+### What about arbitrary queries?
 
 Again purely in the author's opinion, all queries should be hand-written and live within the Dao. A codebase that allows any caller throughout the application to make any arbitrary queries -- especially arbitrary queries whose impact on the underlying storage layer are not fully understood -- is a dangerous codebase.
 
@@ -120,7 +118,7 @@ The author is also not fond of layering a special query syntax or DSL on top of 
 
 So you are advised to simply write findX methods on your subclass, using the specific functionality of the native drivers.
 
-#### Validation
+### Validation
 
 The ``ModelValidator`` class provides a shortcut to Hibernate Validation that allows you to easily validate your models.
 
@@ -132,7 +130,7 @@ In each case the validate method will throw a runtime `DataValidationException` 
 
 You should probably inject a `ModelValidator` instance, but for convenience, there is a static `DefaultModelValidator` that implements the methods.
 
-#### Using with Jersey / Dropwizard: Partial Updates
+### Using with Jersey / Dropwizard: Partial Updates
 
 The `Update<M>` object comes with a Jackson deserializer, so you can include it as the body for PATCH requests.
 
@@ -160,7 +158,7 @@ It will be interpreted as a request to set the `name` field to `Stardog Ventures
 
 Empty strings also will be treated as a request to unset fields.
 
-#### Using with Jersey / Dropwizard: Exception Mapper
+### Using with Jersey / Dropwizard: Exception Mapper
 
 You probably want to register the Stardao-specific exception mapper classes with Jersey. `DataValidationExceptionMapper` in particular provides a friendly 400 which contains all the errors for extraction.
 
