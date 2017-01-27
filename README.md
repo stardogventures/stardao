@@ -143,7 +143,7 @@ public Response updateOrg(@Auth User user, @PathParam("id") ObjectId id, Update<
     DefaultValidator.validateUpdate(update, orgDao);
     // perform ACL checks here...
     orgDao.update(id, update, user.getId());
-    return Response.noContent.build();
+    return Response.noContent().build();
 }
 ```
 
