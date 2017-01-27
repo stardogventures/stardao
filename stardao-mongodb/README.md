@@ -40,7 +40,7 @@ public User loadByEmail(String email) {
 
 There are two built-in ways to write methods that perform paginated queries. Both ways take a `FindIterable<Document>` and return a `Results` object.
 
-#### findWithFieldPagination(FindIterable<Document>, String fieldName, Class fieldType, int limit)
+#### findWithFieldPagination(FindIterable<Document> query, String fieldName, Class fieldType, int limit)
 
 The preferred way is to use `findWithFieldPagination()`. This method is useful when traversing a sorted index. It assumes that you are using a $gte / $lte operation as part of your query. If using an index, it will dramatically outperform `findWithSkipLimitPagination()`
 
@@ -61,7 +61,7 @@ Each result will return the email address of the "next" user in the next field. 
 
 This will perform much better than using "skip" because we leverage the index on email.
 
-#### findWithSkipLimitPagination(FindIterable<Document>, int skip, int limit)
+#### findWithSkipLimitPagination(FindIterable<Document> query, int skip, int limit)
 
 In some circumstances, you have to use skip. Be advised that MongoDB will traverse the documents it is "skipping", so you might really kill performance with large skip values.
 
