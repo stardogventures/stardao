@@ -16,11 +16,15 @@ The following protected methods can be useful when writing your Dao subclass imp
 
 Get ahold of the actual `MongoCollection` object with a call to `getCollection()`. From there you're off to the races with the full functionality of the Java driver.
 
+Example:
+
 #### getMapper()
 
 A call to `getMapper()` will return a `DocumentMapper` which can convert POJOs to Documents and vice versa. It will respect field renaming rules that have been set with `@StorageName` annotations.
 
-#### loadByQuery()
+Example:
+
+#### loadByQuery(Document query)
 
 If you want to write a method that loads a single object by a non-id field, you can call `loadByQuery()`
 
@@ -36,7 +40,7 @@ public User loadByEmail(String email) {
 
 There are two built-in ways to write methods that perform paginated queries. Both ways take a `FindIterable<Document>` and return a `Results` object.
 
-#### findWithFieldPagination()
+#### findWithFieldPagination(FindIterable<Document>, String fieldName, Class fieldType, int limit)
 
 The preferred way is to use `findWithFieldPagination()`. This method is useful when traversing a sorted index. It assumes that you are using a $gte / $lte operation as part of your query. If using an index, it will dramatically outperform `findWithSkipLimitPagination()`
 
@@ -57,7 +61,7 @@ Each result will return the email address of the "next" user in the next field. 
 
 This will perform much better than using "skip" because we leverage the index on email.
 
-#### findWithSkipLimitPagination()
+#### findWithSkipLimitPagination(FindIterable<Document>, int skip, int limit)
 
 In some circumstances, you have to use skip. Be advised that MongoDB will traverse the documents it is "skipping", so you might really kill performance with large skip values.
 
