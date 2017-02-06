@@ -29,6 +29,7 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
+import com.google.common.collect.ImmutableSet;
 import io.stardog.stardao.core.AbstractDao;
 import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
@@ -366,6 +367,15 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
             spec = spec.withValueMap(valueMap);
         }
         return spec;
+    }
+
+    public Update<M> updateOf(M object) {
+        Item item = getMapper().toItem(object);
+        ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
+        for (Map.Entry<String,Object> attr : item.attributes()) {
+            attribs.add(attr.getKey());
+        }
+        return Update.of(object, attribs.build());
     }
 
     /**
