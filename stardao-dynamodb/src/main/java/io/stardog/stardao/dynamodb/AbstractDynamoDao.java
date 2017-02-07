@@ -370,12 +370,25 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
     }
 
     public Update<M> updateOf(M object) {
-        Item item = getMapper().toItem(object);
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
-        for (Map.Entry<String,Object> attr : item.attributes()) {
-            attribs.add(attr.getKey());
+        if (object != null) {
+            Item item = getMapper().toItem(object);
+            for (Map.Entry<String, Object> attr : item.attributes()) {
+                attribs.add(attr.getKey());
+            }
         }
         return Update.of(object, attribs.build());
+    }
+
+    public Update<M> updateOf(M object, Iterable<String> removeFields) {
+        ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
+        if (object != null) {
+            Item item = getMapper().toItem(object);
+            for (Map.Entry<String, Object> attr : item.attributes()) {
+                attribs.add(attr.getKey());
+            }
+        }
+        return Update.of(object, attribs.build(), ImmutableSet.copyOf(removeFields));
     }
 
     /**
