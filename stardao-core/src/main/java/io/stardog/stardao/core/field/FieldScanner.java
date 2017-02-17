@@ -1,5 +1,6 @@
 package io.stardog.stardao.core.field;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
 import io.stardog.stardao.annotations.CreatedAt;
 import io.stardog.stardao.annotations.CreatedBy;
@@ -28,6 +29,9 @@ public class FieldScanner {
         for (Method method : modelClass.getDeclaredMethods()) {
             String fieldName = toFieldName(method);
             if (fieldName != null) {
+                if (method.isAnnotationPresent(JsonIgnore.class)) {
+                    continue;
+                }
                 String storageName = fieldName;
                 if (method.isAnnotationPresent(StorageName.class)) {
                     storageName = method.getAnnotation(StorageName.class).value();
