@@ -1,6 +1,7 @@
 package io.stardog.stardao;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexModel;
@@ -17,6 +18,7 @@ import org.bson.types.ObjectId;
 
 import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +130,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
      * For example:
      *    Document query = new Document("email", new Document("$gte", "bob@example.com"));
      *    Document sort = new Document("email", 1);
-     *    findWithFieldPagination(getCollection.find(query).sort(sort), "email", String.class, 20)
+     *    findWithRangedPagination(getCollection.find(query).sort(sort), "email", String.class, 20)
      * Will return the next 20 results starting with "bob@example.com"
      *
      * @param iterable  query
@@ -137,7 +139,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
      * @param limit number of results to limit
      * @return  results containing up to limit results in the query, and the value of the "next" field
      */
-    protected <N> Results<M, N> findWithFieldPagination(FindIterable<Document> iterable, String nextField, Class<N> nextFieldType, int limit) {
+    protected <N> Results<M, N> findWithRangedPagination(FindIterable<Document> iterable, String nextField, Class<N> nextFieldType, int limit) {
         ImmutableList.Builder<M> builder = ImmutableList.builder();
         M mostRecentObject = null;
         N mostRecentNext = null;
@@ -148,7 +150,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             if (mostRecentObject != null) {
                 builder.add(mostRecentObject);
             }
-            mostRecentNext = doc.get(nextField, nextFieldType);
+            mostRecentNext = getFieldValue(doc, nextField, nextFieldType);
             mostRecentObject = mapper.toObject(doc);
             foundCount++;
         }
@@ -163,6 +165,14 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         }
     }
 
+    protected <T> T getFieldValue(Document doc, String field, Class<T> type) {
+        if (type == LocalDate.class) {
+            return type.cast(LocalDate.parse(doc.getString(field)));
+        } else {
+            return doc.get(field, type);
+        }
+    }
+
     @Override
     public M create(M model, Instant createAt, I createBy) {
         Document doc = mapper.toDocument(model);
@@ -170,10 +180,10 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             doc.put(ID_FIELD, generateId());
         }
         FieldData fieldData = getFieldData();
-        if (createAt != null && fieldData.getCreatedAt() != null) {
+        if (createAt != null && fieldData.getCreatedAt() != null && !doc.containsKey(fieldData.getCreatedAt().getStorageName())) {
             doc.put(fieldData.getCreatedAt().getStorageName(), Date.from(createAt));
         }
-        if (createBy != null && fieldData.getCreatedBy() != null) {
+        if (createBy != null && fieldData.getCreatedBy() != null && !doc.containsKey(fieldData.getCreatedBy().getStorageName())) {
             doc.put(fieldData.getCreatedBy().getStorageName(), createBy);
         }
         collection.insertOne(doc);
@@ -248,5 +258,27 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
 
     public List<IndexModel> getIndexes() {
         return ImmutableList.of();
+    }
+
+    public Update<M> updateOf(M object) {
+        ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
+        if (object != null) {
+            Document doc = getMapper().toDocument(object);
+            for (String key : doc.keySet()) {
+                attribs.add(key);
+            }
+        }
+        return Update.of(object, attribs.build());
+    }
+
+    public Update<M> updateOf(M object, Iterable<String> removeFields) {
+        ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
+        if (object != null) {
+            Document doc = getMapper().toDocument(object);
+            for (String key : doc.keySet()) {
+                attribs.add(key);
+            }
+        }
+        return Update.of(object, attribs.build(), ImmutableSet.copyOf(removeFields));
     }
 }

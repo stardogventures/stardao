@@ -22,6 +22,6 @@ public abstract class Results<M,N> {
     }
 
     public static <M,N> Results<M,N> of(Iterable<M> data, N next) {
-        return new AutoValue_Results<M, N>(ImmutableList.copyOf(data), Optional.of(next));
+        return new AutoValue_Results<M, N>(ImmutableList.copyOf(data), Optional.ofNullable(next));
     }
 }

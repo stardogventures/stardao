@@ -106,27 +106,27 @@ public class AbstractMongoDaoTest {
         Document query = new Document("active", true);
         Document sort = new Document("name", 1);
 
-        Results<TestUser,String> page1 = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
+        Results<TestUser,String> page1 = dao.findWithRangedPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
         assertEquals(50, page1.getData().size());
         assertEquals("Bob 00", page1.getData().get(0).getName());
         assertEquals("Bob 49", page1.getData().get(49).getName());
         assertEquals("Bob 50", page1.getNext().get());
 
         query = new Document("active", true).append("name", new Document("$gte", "Bob 50"));
-        Results<TestUser,String> page2 = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
+        Results<TestUser,String> page2 = dao.findWithRangedPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
         assertEquals(50, page2.getData().size());
         assertEquals("Bob 50", page2.getData().get(0).getName());
         assertEquals("Bob 99", page2.getData().get(49).getName());
         assertFalse(page2.getNext().isPresent());
 
-        page2 = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 1000);
+        page2 = dao.findWithRangedPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 1000);
         assertEquals(50, page2.getData().size());
         assertEquals("Bob 50", page2.getData().get(0).getName());
         assertEquals("Bob 99", page2.getData().get(49).getName());
         assertFalse(page2.getNext().isPresent());
 
         query = new Document("active", false);
-        Results<TestUser,String> nomatch = dao.findWithFieldPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
+        Results<TestUser,String> nomatch = dao.findWithRangedPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
         assertEquals(0, nomatch.getData().size());
         assertFalse(nomatch.getNext().isPresent());
     }
@@ -136,6 +136,17 @@ public class AbstractMongoDaoTest {
         Instant now = Instant.now();
         ObjectId creatorId = new ObjectId();
         TestUser created = dao.create(TestUser.builder().name("Ian").build(), now, creatorId);
+        assertNotNull(created.getId());
+        assertEquals("Ian", created.getName());
+        assertEquals(creatorId, created.getCreateId());
+        assertEquals(now, created.getCreateAt());
+    }
+
+    @Test
+    public void testCreateWithFieldsInPlace() throws Exception {
+        Instant now = Instant.now();
+        ObjectId creatorId = new ObjectId();
+        TestUser created = dao.create(TestUser.builder().name("Ian").createAt(now).createId(creatorId).build(), Instant.now(), new ObjectId());
         assertNotNull(created.getId());
         assertEquals("Ian", created.getName());
         assertEquals(creatorId, created.getCreateId());
