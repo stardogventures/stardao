@@ -1,4 +1,4 @@
-package io.stardog.stardao;
+package io.stardog.stardao.mongodb;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -11,8 +11,8 @@ import io.stardog.stardao.core.Update;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.exceptions.DataNotFoundException;
-import io.stardog.stardao.mapper.DocumentMapper;
-import io.stardog.stardao.mapper.JacksonDocumentMapper;
+import io.stardog.stardao.mongodb.mapper.DocumentMapper;
+import io.stardog.stardao.mongodb.mapper.JacksonDocumentMapper;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -61,8 +61,12 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         this.mapper = mapper;
     }
 
-    protected MongoCollection<Document> getCollection() {
+    public MongoCollection<Document> getCollection() {
         return collection;
+    }
+
+    public String getCollectionName() {
+        return collection.getNamespace().toString();
     }
 
     protected DocumentMapper<M> getMapper() {

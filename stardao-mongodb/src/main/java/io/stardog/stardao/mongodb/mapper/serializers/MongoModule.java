@@ -1,4 +1,4 @@
-package io.stardog.stardao.mapper.serializers;
+package io.stardog.stardao.mongodb.mapper.serializers;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 

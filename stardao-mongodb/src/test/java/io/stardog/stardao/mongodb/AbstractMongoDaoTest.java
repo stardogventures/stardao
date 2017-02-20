@@ -1,4 +1,4 @@
-package io.stardog.stardao;
+package io.stardog.stardao.mongodb;
 
 import com.github.fakemongo.Fongo;
 import com.google.common.collect.ImmutableSet;

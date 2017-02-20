@@ -1,17 +1,11 @@
-package io.stardog.stardao;
+package io.stardog.stardao.mongodb;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.auto.value.AutoValue;
-import io.stardog.stardao.annotations.Id;
-import org.bson.types.ObjectId;
 
 import javax.annotation.Nullable;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
 
 @AutoValue
 @JsonInclude(JsonInclude.Include.NON_NULL)

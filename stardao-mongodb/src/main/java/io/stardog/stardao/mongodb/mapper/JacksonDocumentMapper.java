@@ -1,4 +1,4 @@
-package io.stardog.stardao.mapper;
+package io.stardog.stardao.mongodb.mapper;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -10,7 +10,7 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
-import io.stardog.stardao.mapper.serializers.MongoModule;
+import io.stardog.stardao.mongodb.mapper.serializers.MongoModule;
 import org.bson.Document;
 import org.mongojack.MongoJsonMappingException;
 import org.mongojack.internal.MongoJackModule;

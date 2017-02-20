@@ -1,4 +1,4 @@
-package io.stardog.stardao.mapper;
+package io.stardog.stardao.mongodb.mapper;
 
 import org.bson.Document;
 

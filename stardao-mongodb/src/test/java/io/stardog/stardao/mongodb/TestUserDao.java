@@ -1,6 +1,8 @@
-package io.stardog.stardao;
+package io.stardog.stardao.mongodb;
 
 import com.mongodb.client.MongoCollection;
+import io.stardog.stardao.mongodb.AbstractMongoDao;
+import io.stardog.stardao.mongodb.TestUser;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 

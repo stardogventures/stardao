@@ -1,4 +1,4 @@
-package io.stardog.stardao.mapper.serializers;
+package io.stardog.stardao.mongodb.mapper.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;

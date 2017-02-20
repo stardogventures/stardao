@@ -1,4 +1,4 @@
-package io.stardog.stardao;
+package io.stardog.stardao.mongodb;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

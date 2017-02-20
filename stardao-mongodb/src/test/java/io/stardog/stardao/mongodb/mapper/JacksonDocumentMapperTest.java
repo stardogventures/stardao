@@ -1,9 +1,9 @@
-package io.stardog.stardao.mapper;
+package io.stardog.stardao.mongodb.mapper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.stardog.stardao.TestAddress;
-import io.stardog.stardao.TestUser;
+import io.stardog.stardao.mongodb.TestAddress;
+import io.stardog.stardao.mongodb.TestUser;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
 import org.bson.Document;
