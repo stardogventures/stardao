@@ -14,7 +14,9 @@ public class MongoImporter {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         for (String line; (line = reader.readLine()) != null; ) {
             Document doc = Document.parse(line);
-            collection.updateOne(new Document("_id", doc.get("_id")), doc, new UpdateOptions().upsert(true));
+            Object id = doc.get("_id");
+            doc.remove("_id");
+            collection.updateOne(new Document("_id", id), new Document("$set", doc), new UpdateOptions().upsert(true));
         }
     }
 }
