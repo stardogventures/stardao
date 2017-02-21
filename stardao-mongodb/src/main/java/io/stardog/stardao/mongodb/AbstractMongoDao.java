@@ -66,7 +66,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
     }
 
     public String getCollectionName() {
-        return collection.getNamespace().toString();
+        return collection.getNamespace().getCollectionName();
     }
 
     protected DocumentMapper<M> getMapper() {
