@@ -24,17 +24,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
+public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     private final MongoCollection<Document> collection;
-    private final DocumentMapper<M> mapper;
+    private final DocumentMapper<M> modelMapper;
+    private final DocumentMapper<P> partialMapper;
     public static final String ID_FIELD = "_id";
 
-    public AbstractMongoDao(Class<M> modelClass, MongoCollection<Document> collection) {
-        super(modelClass);
+    public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection) {
+        super(modelClass, partialClass);
         this.collection = collection;
-        this.mapper = new JacksonDocumentMapper<>(modelClass,
+        this.modelMapper = new JacksonDocumentMapper<>(modelClass,
                 JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER,
                 getFieldData());
+        this.partialMapper = new JacksonDocumentMapper<>(partialClass,
+                JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER,
+                getFieldData());
+    }
+
+    public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection, DocumentMapper<M> modelMapper, DocumentMapper<P> partialMapper) {
+        super(modelClass, partialClass);
+        this.collection = collection;
+        this.modelMapper = modelMapper;
+        this.partialMapper = partialMapper;
     }
 
     /**
@@ -55,12 +66,6 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         return fieldData;
     }
 
-    public AbstractMongoDao(Class<M> modelClass, MongoCollection<Document> collection, DocumentMapper<M> mapper) {
-        super(modelClass);
-        this.collection = collection;
-        this.mapper = mapper;
-    }
-
     public MongoCollection<Document> getCollection() {
         return collection;
     }
@@ -69,8 +74,8 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         return collection.getNamespace().getCollectionName();
     }
 
-    protected DocumentMapper<M> getMapper() {
-        return mapper;
+    protected DocumentMapper<M> getModelMapper() {
+        return modelMapper;
     }
 
     protected Object generateId() {
@@ -81,7 +86,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
     public Optional<M> loadOpt(K id) {
         Document query = new Document(ID_FIELD, id);
         Document doc = collection.find(query).limit(1).first();
-        return Optional.ofNullable(mapper.toObject(doc));
+        return Optional.ofNullable(modelMapper.toObject(doc));
     }
 
     protected M loadByQuery(Document query) {
@@ -89,7 +94,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
         if (doc == null) {
             throw new DataNotFoundException(getDisplayModelName() + " not found");
         }
-        return mapper.toObject(doc);
+        return modelMapper.toObject(doc);
     }
 
     /**
@@ -110,7 +115,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             if (mostRecentObject != null) {
                 builder.add(mostRecentObject);
             }
-            mostRecentObject = mapper.toObject(doc);
+            mostRecentObject = modelMapper.toObject(doc);
             foundCount++;
         }
 
@@ -155,7 +160,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
                 builder.add(mostRecentObject);
             }
             mostRecentNext = getFieldValue(doc, nextField, nextFieldType);
-            mostRecentObject = mapper.toObject(doc);
+            mostRecentObject = modelMapper.toObject(doc);
             foundCount++;
         }
 
@@ -178,8 +183,8 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
     }
 
     @Override
-    public M create(M model, Instant createAt, I createBy) {
-        Document doc = mapper.toDocument(model);
+    public M create(P partial, Instant createAt, I createBy) {
+        Document doc = partialMapper.toDocument(partial);
         if (doc.get(ID_FIELD) == null) {
             doc.put(ID_FIELD, generateId());
         }
@@ -191,28 +196,28 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
             doc.put(fieldData.getCreatedBy().getStorageName(), createBy);
         }
         collection.insertOne(doc);
-        return mapper.toObject(doc);
+        return modelMapper.toObject(doc);
     }
 
     @Override
-    public void update(K id, Update<M> update, Instant updateAt, I updateBy) {
+    public void update(K id, Update<P> update, Instant updateAt, I updateBy) {
         Document query = new Document(ID_FIELD, id);
         Document upDoc = toUpdateDocument(update, updateAt, updateBy);
         collection.updateOne(query, upDoc);
     }
 
     @Override
-    public M updateAndReturn(K id, Update<M> update, Instant updateAt, I updateBy) {
+    public M updateAndReturn(K id, Update<P> update, Instant updateAt, I updateBy) {
         Document upDoc = toUpdateDocument(update, updateAt, updateBy);
         Document query = new Document(ID_FIELD, id);
         Document found = getCollection().findOneAndUpdate(query, upDoc);
-        return mapper.toObject(found);
+        return modelMapper.toObject(found);
     }
 
-    protected Document toUpdateDocument(Update<M> update, Instant updateAt, I updateBy) {
+    protected Document toUpdateDocument(Update<P> update, Instant updateAt, I updateBy) {
         Document doc = new Document();
 
-        Document set = mapper.toDocument(update.getSetObject());
+        Document set = partialMapper.toDocument(update.getPartial());
         FieldData fieldData = getFieldData();
         if (updateAt != null && fieldData.getUpdatedAt() != null) {
             set.put(fieldData.getUpdatedAt().getStorageName(), Date.from(updateAt));
@@ -245,7 +250,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
 
     @Override
     public Iterable<M> iterateAll() {
-        return collection.find().map((d) -> mapper.toObject(d));
+        return collection.find().map((d) -> modelMapper.toObject(d));
     }
 
     @Override
@@ -267,7 +272,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
     public Update<M> updateOf(M object) {
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
         if (object != null) {
-            Document doc = getMapper().toDocument(object);
+            Document doc = getModelMapper().toDocument(object);
             for (String key : doc.keySet()) {
                 attribs.add(key);
             }
@@ -278,7 +283,7 @@ public abstract class AbstractMongoDao<M,K,I> extends AbstractDao<M,K,I> {
     public Update<M> updateOf(M object, Iterable<String> removeFields) {
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
         if (object != null) {
-            Document doc = getMapper().toDocument(object);
+            Document doc = getModelMapper().toDocument(object);
             for (String key : doc.keySet()) {
                 attribs.add(key);
             }

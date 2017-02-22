@@ -51,7 +51,7 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
     }
 
     /**
-     * Map a DynamoDB Item to a POJO, using the Jackson object mapper.
+     * Map a DynamoDB Item to a POJO, using the Jackson object modelMapper.
      * @param item
      * @return
      */
@@ -70,7 +70,7 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
     }
 
     /**
-     * Map a POJO to a DynamoDB Item, using the Jackson object mapper.
+     * Map a POJO to a DynamoDB Item, using the Jackson object modelMapper.
      * @param object
      * @return
      */

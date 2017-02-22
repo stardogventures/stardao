@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-public class TestDao extends AbstractDao<TestModel,UUID,UUID> {
+public class TestDao extends AbstractDao<TestModel,TestModel,UUID,UUID> {
     public TestDao(Class<TestModel> modelClass) {
-        super(modelClass);
+        super(modelClass,modelClass);
     }
 
     @Override

@@ -10,8 +10,8 @@ import java.util.Set;
 
 @AutoValue
 @JsonDeserialize(using = UpdateDeserializer.class)
-public abstract class Update<M> {
-    public abstract M getSetObject();
+public abstract class Update<P> {
+    public abstract P getPartial();
     public abstract Set<String> getSetFields();
     public abstract Set<String> getRemoveFields();
 

@@ -19,7 +19,7 @@ public class JsonHelperTest {
     @Test
     public void testUpdate() throws Exception {
         Update<TestModel> update = JsonHelper.update("{'name':'Ian','active':true,email:null}", TestModel.class);
-        assertTrue(update.getSetObject().getActive());
+        assertTrue(update.getPartial().getActive());
         assertTrue(update.getRemoveFields().contains("email"));
     }
 

@@ -303,9 +303,9 @@ public class AbstractDynamoDaoTest {
         assertEquals(model.name, created.name);
     }
 
-    private class NoIdDao extends AbstractDynamoDao<NoIdModel,Void,UUID> {
+    private class NoIdDao extends AbstractDynamoDao<NoIdModel,NoIdModel,Void,UUID> {
         public NoIdDao(Class<NoIdModel> modelClass, AmazonDynamoDB db, String tableName) {
-            super(modelClass, db, tableName);
+            super(modelClass, modelClass, db, tableName);
         }
 
         @Override

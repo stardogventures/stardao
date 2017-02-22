@@ -16,7 +16,7 @@ public class DefaultValidator {
         return VALIDATOR.validateRequired(model);
     }
 
-    public static <T> boolean validateUpdate(Update<T> update, AbstractDao<T,?,?> dao) {
+    public static <T> boolean validateUpdate(Update<T> update, AbstractDao<?,T,?,?> dao) {
         return VALIDATOR.validateUpdate(update, dao.getFieldData());
     }
 }

@@ -6,12 +6,14 @@ import io.stardog.stardao.exceptions.DataNotFoundException;
 
 import java.time.Instant;
 
-public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
+public abstract class AbstractDao<M,P,K,I> implements Dao<M,P,K> {
     private final Class<M> modelClass;
+    private final Class<P> partialClass;
     private final FieldData fieldData;
 
-    public AbstractDao(Class<M> modelClass) {
+    public AbstractDao(Class<M> modelClass, Class<P> partialClass) {
         this.modelClass = modelClass;
+        this.partialClass = partialClass;
         this.fieldData = generateFieldData();
     }
 
@@ -22,6 +24,11 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
     @Override
     public Class<M> getModelClass() {
         return modelClass;
+    }
+
+    @Override
+    public Class<P> getPartialClass() {
+        return partialClass;
     }
 
     public FieldData getFieldData() {
@@ -38,26 +45,26 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
                 .orElseThrow(() -> new DataNotFoundException(getDisplayModelName() + " not found: " + id));
     }
 
-    public M create(M model) {
-        return create(model, Instant.now(), null);
+    public M create(P partial) {
+        return create(partial, Instant.now(), null);
     }
 
-    public M create(M model, Instant createAt) {
-        return create(model, createAt, null);
+    public M create(P partial, Instant createAt) {
+        return create(partial, createAt, null);
     }
 
-    public M create(M model, I createBy) {
-        return create(model, Instant.now(), createBy);
+    public M create(P partial, I createBy) {
+        return create(partial, Instant.now(), createBy);
     }
 
-    public abstract M create(M model, Instant createAt, I createBy);
+    public abstract M create(P partial, Instant createAt, I createBy);
 
     /**
      * Update an object
      * @param id    id of the object to update
      * @param update    update data
      */
-    public void update(K id, Update<M> update) {
+    public void update(K id, Update<P> update) {
         update(id, update, Instant.now(), null);
     }
 
@@ -68,7 +75,7 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
      * @param updateAt    timestamp of the update
      * @return  state of the object prior to modification
      */
-    public void update(K id, Update<M> update, Instant updateAt) {
+    public void update(K id, Update<P> update, Instant updateAt) {
         update(id, update, updateAt, null);
     }
 
@@ -79,7 +86,7 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
      * @param updateBy    user id of the user who performed the update
      * @return  state of the object prior to modification
      */
-    public void update(K id, Update<M> update, I updateBy) {
+    public void update(K id, Update<P> update, I updateBy) {
         update(id, update, Instant.now(), updateBy);
     }
 
@@ -91,10 +98,10 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
      * @param updateBy    user id of the user who performed the update
      * @return  state of the object prior to modification
      */
-    public abstract void update(K id, Update<M> update, Instant updateAt, I updateBy);
+    public abstract void update(K id, Update<P> update, Instant updateAt, I updateBy);
 
     @Override
-    public M updateAndReturn(K id, Update<M> update) {
+    public M updateAndReturn(K id, Update<P> update) {
         return updateAndReturn(id, update, Instant.now(), null);
     }
 
@@ -105,7 +112,7 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
      * @param updateAt    timestamp of the update
      * @return  state of the object prior to modification
      */
-    public M updateAndReturn(K id, Update<M> update, Instant updateAt) {
+    public M updateAndReturn(K id, Update<P> update, Instant updateAt) {
         return updateAndReturn(id, update, updateAt, null);
     }
 
@@ -116,7 +123,7 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
      * @param updateBy    user id of the user who performed the update
      * @return  state of the object prior to modification
      */
-    public  M updateAndReturn(K id, Update<M> update, I updateBy) {
+    public  M updateAndReturn(K id, Update<P> update, I updateBy) {
         return updateAndReturn(id, update, Instant.now(), updateBy);
     }
 
@@ -128,7 +135,7 @@ public abstract class AbstractDao<M,K,I> implements Dao<M,K> {
      * @param updateBy    user id of the user who performed the update
      * @return  state of the object prior to modification
      */
-    public abstract M updateAndReturn(K id, Update<M> update, Instant updateAt, I updateBy);
+    public abstract M updateAndReturn(K id, Update<P> update, Instant updateAt, I updateBy);
 
     /**
      * Drop the backing table and re-initialize. Useful as a shortcut for tests.

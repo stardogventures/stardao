@@ -1,7 +1,6 @@
 package io.stardog.stardao.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
@@ -34,7 +33,7 @@ public class UpdateDeserializer extends JsonDeserializer<Update<?>> implements C
     }
 
     @Override
-    public Update<?> deserialize(JsonParser parser, DeserializationContext ctx) throws IOException, JsonProcessingException {
+    public Update<?> deserialize(JsonParser parser, DeserializationContext ctx) throws IOException {
         ObjectMapper mapper = (ObjectMapper) parser.getCodec();
 
         JsonNode node = mapper.readTree(parser);

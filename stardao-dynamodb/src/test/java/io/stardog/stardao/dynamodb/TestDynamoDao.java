@@ -13,11 +13,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-public class TestDynamoDao extends AbstractDynamoDao<TestModel,UUID,UUID> {
+public class TestDynamoDao extends AbstractDynamoDao<TestModel,TestModel,UUID,UUID> {
     private boolean emptyIndexes;
 
     public TestDynamoDao(AmazonDynamoDB db) {
-        super(TestModel.class, db, "test");
+        super(TestModel.class, TestModel.class, db, "test");
     }
 
     public void setEmptyIndexes(boolean emptyIndexes) {

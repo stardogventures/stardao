@@ -2,12 +2,18 @@ package io.stardog.stardao.core;
 
 import java.util.Optional;
 
-public interface Dao<M,K> {
+public interface Dao<M,P,K> {
     /**
      * The POJO model class that this Dao is responsible for persisting.
      * @return  model class
      */
     public Class<M> getModelClass();
+
+    /**
+     * The POJO partial model class that this Dao is responsible for persisting.
+     * @return  partial model class
+     */
+    public Class<P> getPartialClass();
 
     /**
      * Load an object by its primary key, or throw a runtime exception if the object is not found.
@@ -28,14 +34,14 @@ public interface Dao<M,K> {
      * @param model object data
      * @return  the newly created object
      */
-    public M create(M model);
+    public M create(P model);
 
     /**
      * Update some fields of an existing object by id
      * @param id    id of the object to update
      * @param update    update data
      */
-    public void update(K id, Update<M> update);
+    public void update(K id, Update<P> update);
 
     /**
      * Update an object and return the state of the object prior to modification
@@ -43,7 +49,7 @@ public interface Dao<M,K> {
      * @param update    update data
      * @return  state of the object prior to modification
      */
-    public M updateAndReturn(K id, Update<M> update);
+    public M updateAndReturn(K id, Update<P> update);
 
     /**
      * Delete an object by id

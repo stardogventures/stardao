@@ -102,7 +102,7 @@ With the boring CRUD out of the way, write methods specific to the model -- for 
 
 The two superclasses (`AbstractDynamoDao` and `AbstractMongoDao`) have some different protected methods that you can use to simplify writing queries.
 
-Both superclasses have a mapper (an ItemMapper for DynamoDB and a DocumentMapper for Mongo) which you can get at with a call to `getMapper()`. You can convert the database-returned objects to your POJO with `getMapper().toObject(databaseObject)`
+Both superclasses have a modelMapper (an ItemMapper for DynamoDB and a DocumentMapper for Mongo) which you can get at with a call to `getMapper()`. You can convert the database-returned objects to your POJO with `getMapper().toObject(databaseObject)`
 
 ### Where's save()?
 
@@ -160,7 +160,7 @@ Empty strings also will be treated as a request to unset fields.
 
 ### Using with Jersey / Dropwizard: Exception Mapper
 
-You probably want to register the Stardao-specific exception mapper classes with Jersey. `DataValidationExceptionMapper` in particular provides a friendly 400 which contains all the errors for extraction.
+You probably want to register the Stardao-specific exception modelMapper classes with Jersey. `DataValidationExceptionMapper` in particular provides a friendly 400 which contains all the errors for extraction.
 
 ```java
 env.jersey().register(new DataNotFoundExceptionMapper());

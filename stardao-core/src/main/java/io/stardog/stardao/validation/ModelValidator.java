@@ -45,7 +45,7 @@ public class ModelValidator {
         }
 
         // validate the model in "required" mode -- but ignore fields that aren't being touched
-        Set<ConstraintViolation<Object>> violations = validator.validate(update.getSetObject(), Required.class);
+        Set<ConstraintViolation<Object>> violations = validator.validate(update.getPartial(), Required.class);
         for (ConstraintViolation<?> cv : violations) {
             String field = cv.getPropertyPath().toString();
             if (updateFields.contains(field)) {

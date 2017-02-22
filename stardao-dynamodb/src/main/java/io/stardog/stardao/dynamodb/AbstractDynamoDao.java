@@ -49,26 +49,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
-    protected final ItemMapper<M> mapper;
+public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
+    protected final ItemMapper<M> modelMapper;
+    protected final ItemMapper<P> partialMapper;
     protected final AmazonDynamoDB db;
     protected final Table table;
     protected final String tableName;
     private final static Logger LOGGER = LoggerFactory.getLogger(AbstractDynamoDao.class);
 
-    public AbstractDynamoDao(Class<M> modelClass, AmazonDynamoDB db, String tableName) {
-        super(modelClass);
+    public AbstractDynamoDao(Class<M> modelClass, Class<P> partialClass, AmazonDynamoDB db, String tableName) {
+        super(modelClass, partialClass);
         this.db = db;
         this.tableName = tableName;
-        this.mapper = new JacksonItemMapper<>(modelClass, getFieldData());
+        this.modelMapper = new JacksonItemMapper<>(modelClass, getFieldData());
+        this.partialMapper = new JacksonItemMapper<>(partialClass, getFieldData());
         this.table = new DynamoDB(db).getTable(tableName);
     }
 
-    public AbstractDynamoDao(Class<M> modelClass, AmazonDynamoDB db, String tableName, ItemMapper<M> mapper) {
-        super(modelClass);
+    public AbstractDynamoDao(Class<M> modelClass, Class<P> partialClass, AmazonDynamoDB db, String tableName, ItemMapper<M> modelMapper, ItemMapper<P> partialMapper) {
+        super(modelClass, partialClass);
         this.db = db;
         this.tableName = tableName;
-        this.mapper = mapper;
+        this.modelMapper = modelMapper;
+        this.partialMapper = partialMapper;
         this.table = new DynamoDB(db).getTable(tableName);
     }
 
@@ -89,11 +92,11 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
     }
 
     /**
-     * Returns the item mapper used to convert POJOs to Items and vice versa
-     * @return  the item mapper
+     * Returns the item modelMapper used to convert POJOs to Items and vice versa
+     * @return  the item modelMapper
      */
-    public ItemMapper<M> getMapper() {
-        return mapper;
+    public ItemMapper<M> getModelMapper() {
+        return modelMapper;
     }
 
     /**
@@ -141,7 +144,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         GetItemSpec spec = new GetItemSpec()
                 .withPrimaryKey(toPrimaryKey(id));
         Item item = table.getItem(spec);
-        return Optional.ofNullable(mapper.toObject(item));
+        return Optional.ofNullable(modelMapper.toObject(item));
     }
 
     /**
@@ -160,7 +163,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         Index index = table.getIndex(indexName);
         ItemCollection<QueryOutcome> items = index.query(spec);
         for (Item i : items) {
-            return mapper.toObject(i);
+            return modelMapper.toObject(i);
         }
         throw new DataNotFoundException(getDisplayModelName() + " not found: " + value);
     }
@@ -171,7 +174,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
      */
     @Override
     public Iterable<M> iterateAll() {
-        return () -> new DynamoIterator<>(table.scan().iterator(), mapper);
+        return () -> new DynamoIterator<>(table.scan().iterator(), modelMapper);
     }
 
     /**
@@ -190,7 +193,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
     protected Results<M,K> scan(ScanSpec spec) {
         List<M> results = new ArrayList<>();
         for (Item item : table.scan(spec)) {
-            results.add(mapper.toObject(item));
+            results.add(modelMapper.toObject(item));
         }
         return Results.of(results);
     }
@@ -205,7 +208,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         Index index = table.getIndex(indexName);
         List<M> results = new ArrayList<>();
         for (Item item : index.query(spec)) {
-            results.add(mapper.toObject(item));
+            results.add(modelMapper.toObject(item));
         }
         return Results.of(results);
     }
@@ -240,14 +243,14 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
 
     /**
      * Create a new object and add id field if needed
-     * @param model model object to create
+     * @param partial partial model object to create
      * @param createAt timestamp of the creation
      * @param creatorId id of the creator
      * @return  newly created object, including added fields
      */
     @Override
-    public M create(M model, Instant createAt, I creatorId) {
-        Item item = toCreateItem(model, createAt, creatorId);
+    public M create(P partial, Instant createAt, I creatorId) {
+        Item item = toCreateItem(partial, createAt, creatorId);
         PutItemSpec spec = new PutItemSpec()
                 .withItem(item);
         if (getFieldData().getId() != null) {
@@ -257,18 +260,18 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
                     );
         }
         table.putItem(spec);
-        return mapper.toObject(item);
+        return modelMapper.toObject(item);
     }
 
     /**
-     * Return a DynamoDB item from a model, possibly adding timestamp and user id fields
-     * @param model
+     * Return a DynamoDB item from a partial, possibly adding timestamp and user id fields
+     * @param partial
      * @param createAt
      * @param creatorId
      * @return
      */
-    protected Item toCreateItem(M model, Instant createAt, I creatorId) {
-        Item item = mapper.toItem(model);
+    protected Item toCreateItem(P partial, Instant createAt, I creatorId) {
+        Item item = partialMapper.toItem(partial);
 
         // add the @Id field (primary key)
         Field id = getFieldData().getId();
@@ -296,7 +299,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
      * @param updateAt    update at
      * @param updaterId id of the user performing the update
      */
-    public void update(K id, Update<M> update, Instant updateAt, I updaterId) {
+    public void update(K id, Update<P> update, Instant updateAt, I updaterId) {
         UpdateItemSpec spec = toUpdateItemSpec(id, update, updateAt, updaterId);
         table.updateItem(spec);
     }
@@ -307,7 +310,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
      * @param update    update data
      * @return  the model
      */
-    public M updateAndReturn(K id, Update<M> update, Instant updateAt, I updaterId) {
+    public M updateAndReturn(K id, Update<P> update, Instant updateAt, I updaterId) {
         UpdateItemSpec spec = toUpdateItemSpec(id, update, updateAt, updaterId);
         spec = spec.withReturnValues(ReturnValue.ALL_OLD);
         UpdateItemOutcome outcome = table.updateItem(spec);
@@ -315,7 +318,7 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         if (item == null) {
             item = new Item();
         }
-        return mapper.toObject(item);
+        return modelMapper.toObject(item);
     }
 
     /**
@@ -324,12 +327,12 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
      * @param update    update data
      * @return  spec containing the DynamoDB update
      */
-    protected UpdateItemSpec toUpdateItemSpec(K id, Update<M> update, Instant updateAt, I updaterId) {
+    protected UpdateItemSpec toUpdateItemSpec(K id, Update<P> update, Instant updateAt, I updaterId) {
         String updateExpression = "";
         NameMap nameMap = new NameMap();
         ValueMap valueMap = new ValueMap();
 
-        Item setFields = mapper.toItem(update.getSetObject());
+        Item setFields = partialMapper.toItem(update.getPartial());
 
         // add the @UpdatedBy and @UpdatedAt fields
         Field updatedByField = getFieldData().getUpdatedBy();
@@ -369,26 +372,26 @@ public abstract class AbstractDynamoDao<M,K,I> extends AbstractDao<M,K,I> {
         return spec;
     }
 
-    public Update<M> updateOf(M object) {
+    public Update<P> updateOf(P partial) {
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
-        if (object != null) {
-            Item item = getMapper().toItem(object);
+        if (partial != null) {
+            Item item = partialMapper.toItem(partial);
             for (Map.Entry<String, Object> attr : item.attributes()) {
                 attribs.add(attr.getKey());
             }
         }
-        return Update.of(object, attribs.build());
+        return Update.of(partial, attribs.build());
     }
 
-    public Update<M> updateOf(M object, Iterable<String> removeFields) {
+    public Update<P> updateOf(P partial, Iterable<String> removeFields) {
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
-        if (object != null) {
-            Item item = getMapper().toItem(object);
+        if (partial != null) {
+            Item item = partialMapper.toItem(partial);
             for (Map.Entry<String, Object> attr : item.attributes()) {
                 attribs.add(attr.getKey());
             }
         }
-        return Update.of(object, attribs.build(), ImmutableSet.copyOf(removeFields));
+        return Update.of(partial, attribs.build(), ImmutableSet.copyOf(removeFields));
     }
 
     /**

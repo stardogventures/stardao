@@ -23,10 +23,10 @@ public class UpdateDeserializerTest {
 
         String json = "{\"name\":\"Marty\",\"birthday\":\"1985-10-26\",\"email\":null,\"country\":\"\"}";
         Update<TestModel> update = mapper.readValue(json, new TypeReference<Update<TestModel>>() {});
-        assertEquals("Marty", update.getSetObject().getName());
-        assertEquals(LocalDate.of(1985, 10, 26), update.getSetObject().getBirthday());
-        assertNull(update.getSetObject().getEmail());
-        assertNull(update.getSetObject().getCountry());
+        assertEquals("Marty", update.getPartial().getName());
+        assertEquals(LocalDate.of(1985, 10, 26), update.getPartial().getBirthday());
+        assertNull(update.getPartial().getEmail());
+        assertNull(update.getPartial().getCountry());
         assertEquals(ImmutableSet.of("email", "country"), update.getRemoveFields());
     }
 
@@ -37,6 +37,6 @@ public class UpdateDeserializerTest {
 
         String json = "{\"active\":true}";
         Update<TestModel> update = mapper.readValue(json, new TypeReference<Update<TestModel>>() {});
-        assertTrue(update.getSetObject().getActive());
+        assertTrue(update.getPartial().getActive());
     }
 }

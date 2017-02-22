@@ -1,6 +1,6 @@
 # stardao-mongodb
 
-The `AbstractMongoDao` leverages [MongoJack](http://mongojack.org/)'s mapper. However, it does not use any other MongoJack features.
+The `AbstractMongoDao` leverages [MongoJack](http://mongojack.org/)'s modelMapper. However, it does not use any other MongoJack features.
 
 This library is based on the post-3.0 Java driver and therefore uses `MongoCollection<Document>`, `Document`, and the other good stuff from 3.0 rather than `DBCollection` and `BasicDBObject`.
 
