@@ -59,14 +59,25 @@ public class AutoPartialProcessor extends AbstractProcessor {
 
         List<MethodSpec> generatedMethods = new ArrayList<>();
         List<MethodSpec> builderMethods = new ArrayList<>();
+        StringBuilder ofBuilders = new StringBuilder();
 
         for (Element e : type.getEnclosedElements()) {
             if (isGetter(e)) {
                 generatedMethods.add(toGetterMethodSpec(e));
                 builderMethods.add(toBuilderMethodSpec(e));
                 builderMethods.add(toBuilderOptMethodSpec(e));
+
+                String getterName = e.getSimpleName().toString();
+                String fieldName = getterToFieldName(getterName);
+                ofBuilders.append("." + fieldName + "(entity." + getterName + "())");
             }
         }
+        MethodSpec ofMethod = MethodSpec.methodBuilder("of")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .returns(ClassName.bestGuess(generateClassName))
+                .addParameter(ClassName.bestGuess(className), "entity")
+                .addStatement("return " + generateClassName + ".builder()" + ofBuilders + ".build()")
+                .build();
         MethodSpec toBuilderMethod = MethodSpec.methodBuilder("toBuilder")
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .returns(ClassName.bestGuess("Builder"))
@@ -90,6 +101,7 @@ public class AutoPartialProcessor extends AbstractProcessor {
         TypeSpec partialClass = TypeSpec.classBuilder(generateClassName)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addMethods(generatedMethods)
+                .addMethod(ofMethod)
                 .addMethod(builderMethod)
                 .addMethod(toBuilderMethod)
                 .addType(builderClass)

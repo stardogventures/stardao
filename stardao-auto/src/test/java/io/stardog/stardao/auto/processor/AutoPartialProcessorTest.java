@@ -39,6 +39,15 @@ public class AutoPartialProcessorTest {
     }
 
     @Test
+    public void testGeneratedOf() throws Exception {
+        TestUser user = TestUser.builder().name("Bob Jones").age(42).email("example@example.com").build();
+        PartialTestUser partial = PartialTestUser.of(user);
+        assertEquals("Bob Jones", partial.getName().get());
+        assertEquals(new Integer(42), partial.getAge().get());
+        assertEquals("example@example.com", partial.getEmail().get());
+    }
+
+    @Test
     public void testJackson() throws Exception {
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(new Jdk8Module());
