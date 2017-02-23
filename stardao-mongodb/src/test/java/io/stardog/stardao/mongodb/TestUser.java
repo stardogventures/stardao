@@ -1,6 +1,7 @@
 package io.stardog.stardao.mongodb;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.auto.value.AutoValue;
@@ -93,6 +94,8 @@ public abstract class TestUser {
     public abstract static class Builder {
         public abstract Builder id(ObjectId id);
         public abstract Builder categoryId(ObjectId id);
+        @JsonProperty
+        public abstract Builder categoryId(Optional<ObjectId> id);
         public abstract Builder name(String name);
         public abstract Builder email(String email);
         public abstract Builder birthday(LocalDate birthday);

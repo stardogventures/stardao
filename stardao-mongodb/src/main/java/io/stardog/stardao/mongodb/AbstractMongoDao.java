@@ -235,7 +235,12 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     protected Document toUpdateDocument(Update<P> update, Instant updateAt, I updateBy) {
         Document doc = new Document();
 
-        Document set = partialMapper.toDocument(update.getPartial());
+        Document setFields = partialMapper.toDocument(update.getPartial());
+        Document set = new Document();
+        for (String field : update.getSetFields()) {
+            set.put(field, setFields.get(field));
+        }
+
         FieldData fieldData = getFieldData();
         if (updateAt != null && fieldData.getUpdatedAt() != null) {
             set.put(fieldData.getUpdatedAt().getStorageName(), Date.from(updateAt));
