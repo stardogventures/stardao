@@ -43,18 +43,34 @@ Place your annotations over the getter methods. All annotations are optional, bu
 
 You are also encouraged to use Hibernate Validator annotations, such as `@Email` or `@Min`.
 
+### Use @AutoPartial to generate partials
+
+While it's not required, you can set up your Dao to make a distinction between the base entity model class, and a supporting model class called a `Partial`. Partials are like entities, except every single field on them is an `Optional`. For example, if you have a `User` class, you might have a `PartialUser` to go with it.
+
+This frees you to make all your required fields non-Nullable and non-Optional, on the base entity class. When you pass around and interact with a `User`, you can be certain that none of the required fields are null, and set up the non-required fields as `Optional`s.
+
+So what are Partials useful for?
+  - **Updates:** when performing partial updates, you usually only want to pass in the specific fields you intend to update. This idea is much better represented by a Partial than an entity.
+  - **Creates:** when creating an entity, usually the caller omits the primary key id (letting the database generate the id). However, the id must exist on all of your entities after they're created. The same is usually true of created-by/created-at fields. So as long as it gets validated to ensure it's not missing any required fields, a Partial is a better way to pass in the initial data.
+  - **Restricted views:** sometimes you want to expose a view of an object, for a particular user, that has certain sensitive fields omitted. Partials are a good way to represent these.
+  
+Partials can't derive from the base class, since the methods have different signatures. To automatically generate Partials, include the `stardao-auto` module, and add `@AutoPartial` to your entity class.
+
+Stardao will automatically generate a `PartialX` class to go with your entity. This leverages AutoValue and will therefore be immutable. It uses builders, with no prefix on the setter methods.
+
 ### Define Your Dao
 
 Extend either the `AbstractMongoDao` or `AbstractDynamoDao` superclass. The type parameters are, in order:
 
 - `M`: Model Class
+- `P`: Partial Model Class (can be the same as the Model Class, if you don't want to use partials)
 - `K`: Primary key type (type of the `@Id` field)
 - `I`: User-id foreign key type (type of the `@CreatedBy` and `@UpdatedBy` fields)
 
-For example, if you have a MongoDB collection called `Org` to track organizations, that uses `Long `as the org `_id` and `ObjectId` as the associated user id type:
+For example, if you have a MongoDB collection called `org` to track organizations, that uses `Org` as the model class, `PartialOrg` as the partial model class, `Long `as the org `_id` and `ObjectId` as the associated user id type:
 
 ```
-public class OrgDao extends AbstractMongoDao<Org,Long,ObjectId> {
+public class OrgDao extends AbstractMongoDao<Org,PartialOrg,Long,ObjectId> {
 ```
 
 ### Write a constructor
@@ -62,18 +78,18 @@ public class OrgDao extends AbstractMongoDao<Org,Long,ObjectId> {
 Typically the constructor takes the appropriate connection object from the driver and calls the superclass. For example, for MongoDB:
 
 ```
-public class OrgDao extends AbstractMongoDao<Org,Long,ObjectId> {
+public class OrgDao extends AbstractMongoDao<Org,PartialOrg,Long,ObjectId> {
     public OrgDao(MongoDatabase db) {
-        super(Org.class, db.getCollection("org"));
+        super(Org.class, PartialOrg.class, db.getCollection("org"));
     }
 ```
 
 For DynamoDB:
 
 ```
-public class OrgDao extends AbstractDynamoDao<Org,Long,UUID> {
+public class OrgDao extends AbstractDynamoDao<Org,PartialOrg,Long,UUID> {
     public OrgDao(DynamoDB db) {
-        super(Org.class, db, "org");
+        super(Org.class, PartialOrg.class, db, "org");
     }
 ```
 
@@ -83,9 +99,9 @@ Every Dao automatically comes with the following public methods:
 
 - ``M load(K id)`` - loads an object and throws a DataNotFoundException (a runtime exception) if it's not found
 - ``Optional<M> loadOpt(K id)`` - loads an object as an Optional
-- ``M create(M model, [I createdBy])`` - creates a new object
-- ``void update(K id, Update<M> update[, I updatedBy])`` - perform a partial update
-- ``M updateAndReturn(K id, Update<M> update[, I updatedBy])`` - perform an update and return the object prior to modification
+- ``M create(P partial, [I createdBy])`` - creates a new object
+- ``void update(K id, Update<P> update[, I updatedBy])`` - perform a partial update
+- ``M updateAndReturn(K id, Update<P> update[, I updatedBy])`` - perform an update and return the object prior to modification
 - ``void delete(K id)`` - delete an object by id
 - ``Iterable<M> iterateAll()`` - iterate through the whole table
 - ``initTable()`` - initialize the table and ensure indexes (never destructive of data)
@@ -102,7 +118,7 @@ With the boring CRUD out of the way, write methods specific to the model -- for 
 
 The two superclasses (`AbstractDynamoDao` and `AbstractMongoDao`) have some different protected methods that you can use to simplify writing queries.
 
-Both superclasses have a modelMapper (an ItemMapper for DynamoDB and a DocumentMapper for Mongo) which you can get at with a call to `getMapper()`. You can convert the database-returned objects to your POJO with `getMapper().toObject(databaseObject)`
+Both superclasses have a mapper for transforming the model classes into the specific document type for the database (an ItemMapper for DynamoDB and a DocumentMapper for Mongo) which you can get at with a call to `getModelMapper()` and `getPartialMapper()`. You can convert the database-returned objects to your POJO with `getModelMapper().toObject(databaseObject)`
 
 ### Where's save()?
 
@@ -132,14 +148,14 @@ You should probably inject a `ModelValidator` instance, but for convenience, the
 
 ### Using with Jersey / Dropwizard: Partial Updates
 
-The `Update<M>` object comes with a Jackson deserializer, so you can include it as the body for PATCH requests.
+The `Update<P>` object comes with a Jackson deserializer, so you can include it as the body for PATCH requests.
 
 A simple update resource method might look like:
 
 ```java
 @PATCH
 @Path("/org/{id}")
-public Response updateOrg(@Auth User user, @PathParam("id") ObjectId id, Update<Org> update) {
+public Response updateOrg(@Auth User user, @PathParam("id") ObjectId id, Update<PartialOrg> update) {
     DefaultValidator.validateUpdate(update, orgDao);
     // perform ACL checks here...
     orgDao.update(id, update, user.getId());
