@@ -56,7 +56,7 @@ So what are Partials useful for?
   
 Partials can't derive from the base class, since the methods have different signatures. So while you could write Partials yourself, you'd be violating DRY pretty badly. Fortunately, Stardao has a solution, inspired by Google's AutoValue. To automatically generate Partials, just include the `stardao-auto` module, and add `@AutoPartial` to your entity class.
 
-Stardao will automatically generate a `PartialEntityname` class to go with your entity. This leverages AutoValue and will therefore be immutable. It uses builders, with no prefix on the setter methods.
+Stardao will automatically generate a `PartialEntityname` class to go with your entity. This leverages AutoValue and will therefore be immutable. It uses builders, with no prefix on the setter methods. You can also convert a regular entity into a partial with `PartialEntityname.of(entity)`.
 
 ### Define Your Dao
 
