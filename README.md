@@ -52,7 +52,7 @@ This frees you to make all your required fields non-Nullable and non-Optional, o
 So what are Partials useful for?
   - **Updates:** when performing partial updates, you usually only want to pass in the specific fields you intend to update. This idea is much better represented by a Partial than an entity.
   - **Creates:** when creating an entity, usually the caller omits the primary key id (letting the database generate the id). However, the id must exist on all of your entities after they're created. The same is usually true of created-by/created-at fields. So as long as it gets validated to ensure it's not missing any required fields, a Partial is a better way to pass in the initial data.
-  - **Restricted views:** sometimes you want to expose a view of an object, for a particular user, that has certain sensitive fields omitted. Partials are a good way to represent these.
+  - **Limited views:** sometimes you want to expose a view of an object, for a particular user, that has certain sensitive fields omitted. Or for performance/memory reasons, you only want to retrieve a couple of the fields from the database. Partials are a good way to represent these views.
   
 Partials can't derive from the base class, since the methods have different signatures. So while you could write Partials yourself, you'd be violating DRY pretty badly. Fortunately, Stardao has a solution, inspired by Google's AutoValue. To automatically generate Partials, just include the `stardao-auto` module, and add `@AutoPartial` to your entity class.
 
