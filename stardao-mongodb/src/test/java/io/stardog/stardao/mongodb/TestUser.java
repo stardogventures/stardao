@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @AutoValue
@@ -26,6 +27,8 @@ public abstract class TestUser {
     @Id
     @Nullable
     public abstract ObjectId getId();
+
+    public abstract Optional<ObjectId> getCategoryId();
 
     @Nullable
     public abstract String getName();
@@ -89,6 +92,7 @@ public abstract class TestUser {
     @JsonPOJOBuilder(withPrefix = "")
     public abstract static class Builder {
         public abstract Builder id(ObjectId id);
+        public abstract Builder categoryId(ObjectId id);
         public abstract Builder name(String name);
         public abstract Builder email(String email);
         public abstract Builder birthday(LocalDate birthday);

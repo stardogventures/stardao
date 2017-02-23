@@ -53,6 +53,7 @@ public class JacksonDocumentMapperTest {
     @Test
     public void testToDocumentAndBack() throws Exception {
         ObjectId id = new ObjectId();
+        ObjectId categoryId = new ObjectId();
         ObjectId friend1 = new ObjectId();
         ObjectId friend2 = new ObjectId();
 
@@ -62,6 +63,7 @@ public class JacksonDocumentMapperTest {
         UUID uuid = UUID.randomUUID();
         TestUser user = TestUser.builder()
                 .id(id)
+                .categoryId(categoryId)
                 .name("Ian White")
                 .email("ian@example.com")
                 .loginAt(Instant.ofEpochMilli(1485116825000L))
@@ -70,8 +72,9 @@ public class JacksonDocumentMapperTest {
                 .addresses(ImmutableList.of(address1, address2))
                 .build();
         Document doc = mapper.toDocument(user);
-        assertEquals(7, doc.size());
+        assertEquals(8, doc.size());
         assertEquals(id, doc.get("_id"));
+        assertEquals(categoryId, doc.get("categoryId"));
         assertEquals(friend1, doc.get("friends", List.class).get(0));
         assertEquals(ImmutableMap.of("city", "Boston", "state", "MA"), doc.get("addresses", List.class).get(0));
 
