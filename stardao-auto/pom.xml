@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.stardog.stardao.auto</groupId>
+    <groupId>io.stardog.stardao</groupId>
     <artifactId>stardao-auto</artifactId>
 
     <build>
@@ -36,6 +36,7 @@
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>1.0-rc3</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.squareup</groupId>

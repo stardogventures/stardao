@@ -1,5 +1,6 @@
 package io.stardog.stardao.auto.processor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
@@ -118,6 +119,10 @@ public class AutoPartialProcessor extends AbstractProcessor {
         // must have no parameters
         ExecutableType methodType = (ExecutableType)method.asType();
         if (methodType.getParameterTypes().size() > 0) {
+            return false;
+        }
+        // ignore @JsonIgnore methods
+        if (method.getAnnotation(JsonIgnore.class) != null) {
             return false;
         }
         return true;

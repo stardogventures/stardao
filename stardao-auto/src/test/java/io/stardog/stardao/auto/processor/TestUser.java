@@ -1,5 +1,6 @@
 package io.stardog.stardao.auto.processor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.auto.value.AutoValue;
 import io.stardog.stardao.auto.annotations.AutoPartial;
 
@@ -25,5 +26,10 @@ public abstract class TestUser {
         public abstract Builder age(int age);
         public abstract Builder email(String email);
         public abstract TestUser build();
+    }
+
+    @JsonIgnore
+    public boolean isOk() {
+        return true;
     }
 }

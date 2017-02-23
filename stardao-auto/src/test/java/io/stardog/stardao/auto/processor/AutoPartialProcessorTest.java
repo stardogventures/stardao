@@ -28,6 +28,14 @@ public class AutoPartialProcessorTest {
         // ensure that getter annotations get copied over
         Method getEmail = PartialTestUser.class.getMethod("getEmail");
         assertNotNull(getEmail.getAnnotation(TestAnnotation.class));
+
+        // ensure that @JsonIgnore properties do not get copied over
+        try {
+            PartialTestUser.class.getMethod("isOk");
+            fail("Expected NoSuchMethodException");
+        } catch (NoSuchMethodException e) {
+            // expected
+        }
     }
 
     @Test
