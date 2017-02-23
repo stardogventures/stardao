@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.DBObject;
@@ -31,6 +32,7 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
             .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
             .registerModule(new MongoJackModule())
             .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module())
             .registerModule(new MongoModule());
 
     public JacksonDocumentMapper(Class<M> modelClass) {

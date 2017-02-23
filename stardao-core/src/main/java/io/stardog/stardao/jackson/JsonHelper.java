@@ -3,6 +3,7 @@ package io.stardog.stardao.jackson;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.stardog.stardao.core.Update;
 
@@ -16,7 +17,8 @@ public class JsonHelper {
     public static ObjectMapper MAPPER = new ObjectMapper()
             .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
             .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
-            .registerModule(new JavaTimeModule());
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module());
 
     /**
      * Create an object, given a JSON string and a class.

@@ -193,14 +193,28 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
             doc.put(ID_FIELD, generateId());
         }
         FieldData fieldData = getFieldData();
-        if (createAt != null && fieldData.getCreatedAt() != null && !doc.containsKey(fieldData.getCreatedAt().getStorageName())) {
+        if (createAt != null && fieldData.getCreatedAt() != null
+                && !doc.containsKey(fieldData.getCreatedAt().getStorageName())) {
             doc.put(fieldData.getCreatedAt().getStorageName(), Date.from(createAt));
         }
-        if (createBy != null && fieldData.getCreatedBy() != null && !doc.containsKey(fieldData.getCreatedBy().getStorageName())) {
+        if (createBy != null && fieldData.getCreatedBy() != null
+                && !doc.containsKey(fieldData.getCreatedBy().getStorageName())) {
             doc.put(fieldData.getCreatedBy().getStorageName(), createBy);
         }
+        // automatically pre-populate updatedAt/updatedBy, if those fields are non-optional
+        if (createAt != null && fieldData.getUpdatedAt() != null
+                && !fieldData.getUpdatedAt().isOptional()
+                && !doc.containsKey(fieldData.getUpdatedAt().getStorageName())) {
+            doc.put(fieldData.getUpdatedAt().getStorageName(), Date.from(createAt));
+        }
+        if (createBy != null && fieldData.getUpdatedBy() != null
+                && !fieldData.getUpdatedBy().isOptional()
+                && !doc.containsKey(fieldData.getUpdatedBy().getStorageName())) {
+            doc.put(fieldData.getUpdatedBy().getStorageName(), createBy);
+        }
+        M model = modelMapper.toObject(doc);
         collection.insertOne(doc);
-        return modelMapper.toObject(doc);
+        return model;
     }
 
     @Override

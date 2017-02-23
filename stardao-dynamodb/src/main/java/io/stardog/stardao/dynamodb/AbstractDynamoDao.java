@@ -259,8 +259,9 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                                     .with("#id", getFieldData().getId().getStorageName())
                     );
         }
+        M model = modelMapper.toObject(item);
         table.putItem(spec);
-        return modelMapper.toObject(item);
+        return model;
     }
 
     /**
@@ -287,6 +288,15 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         Field createdAtField = getFieldData().getCreatedAt();
         if (createdAtField != null && item.get(createdAtField.getStorageName()) == null && createAt != null) {
             item.with(createdAtField.getStorageName(), toStorageValue(createAt));
+        }
+        // if @UpdatedAt and @UpdatedBy are non-optional, prepopulate them too
+        Field updatedByField = getFieldData().getUpdatedBy();
+        if (updatedByField != null && !updatedByField.isOptional() && item.get(updatedByField.getStorageName()) == null && creatorId != null) {
+            item.with(updatedByField.getStorageName(), toStorageValue(creatorId));
+        }
+        Field updatedAtField = getFieldData().getUpdatedAt();
+        if (updatedAtField != null && !updatedAtField.isOptional() && item.get(updatedAtField.getStorageName()) == null && createAt != null) {
+            item.with(updatedAtField.getStorageName(), toStorageValue(createAt));
         }
 
         return item;

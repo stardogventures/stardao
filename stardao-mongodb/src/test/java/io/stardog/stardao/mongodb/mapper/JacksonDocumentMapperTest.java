@@ -26,7 +26,7 @@ public class JacksonDocumentMapperTest {
 
     @Before
     public void setUp() throws Exception {
-        Map<String,Field> fields = ImmutableMap.of("id", Field.builder().name("id").storageName("_id").updatable(false).build());
+        Map<String,Field> fields = ImmutableMap.of("id", Field.builder().name("id").storageName("_id").optional(false).updatable(false).build());
         FieldData fieldData = FieldData.builder().all(fields).build();
         mapper = new JacksonDocumentMapper<>(TestUser.class, JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER, fieldData);
     }

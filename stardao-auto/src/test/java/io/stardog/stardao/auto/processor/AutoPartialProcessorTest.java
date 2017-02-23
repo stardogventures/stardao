@@ -2,6 +2,8 @@ package io.stardog.stardao.auto.processor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.stardog.stardao.jackson.JsonHelper;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -40,7 +42,7 @@ public class AutoPartialProcessorTest {
 
     @Test
     public void testGeneratedOf() throws Exception {
-        TestUser user = TestUser.builder().name("Bob Jones").age(42).email("example@example.com").build();
+        TestUser user = TestUser.builder().id(new ObjectId()).name("Bob Jones").age(42).email("example@example.com").build();
         PartialTestUser partial = PartialTestUser.of(user);
         assertEquals("Bob Jones", partial.getName().get());
         assertEquals(new Integer(42), partial.getAge().get());
@@ -52,12 +54,21 @@ public class AutoPartialProcessorTest {
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(new Jdk8Module());
 
-        PartialTestUser user = mapper.readValue("{\"age\":36,\"email\":\"example@example.com\"}", PartialTestUser.class);
+        PartialTestUser user = PartialTestUser.builder().age(Optional.of(36)).build();
+        String json = mapper.writeValueAsString(user);
+        assertEquals("{\"age\":36}", json);
+
+        user = mapper.readValue("{\"age\":36,\"email\":\"example@example.com\"}", PartialTestUser.class);
         assertEquals(new Integer(36), user.getAge().get());
         assertEquals("example@example.com", user.getEmail().get());
 
-        user = PartialTestUser.builder().age(36).build();
-        String json = mapper.writeValueAsString(user);
-        assertEquals("{\"age\":36}", json);
+        user = mapper.readValue("{\"name\":\"Bob\"}", PartialTestUser.class);
+        assertEquals("Bob", user.getName().get());
+    }
+
+    @Test
+    public void testJsonHelper() throws Exception {
+        PartialTestUser user = JsonHelper.object("{age:36}", PartialTestUser.class);
+        assertEquals(new Integer(36), user.getAge().get());
     }
 }

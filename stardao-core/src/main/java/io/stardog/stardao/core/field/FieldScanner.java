@@ -39,6 +39,7 @@ public class FieldScanner {
                 Field field = Field.builder()
                         .name(fieldName)
                         .storageName(storageName)
+                        .optional(method.getReturnType().getSimpleName().equals("Optional"))
                         .updatable(method.isAnnotationPresent(Updatable.class))
                         .build();
                 all.put(fieldName, field);

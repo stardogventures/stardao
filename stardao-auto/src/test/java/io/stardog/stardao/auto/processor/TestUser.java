@@ -3,6 +3,7 @@ package io.stardog.stardao.auto.processor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.auto.value.AutoValue;
 import io.stardog.stardao.auto.annotations.AutoPartial;
+import org.bson.types.ObjectId;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.Optional;
 @AutoValue
 @AutoPartial
 public abstract class TestUser {
+    public abstract ObjectId getId();
     public abstract String getName();
     public abstract int getAge();
 
@@ -22,6 +24,7 @@ public abstract class TestUser {
 
     @AutoValue.Builder
     public abstract static class Builder {
+        public abstract Builder id(ObjectId id);
         public abstract Builder name(String name);
         public abstract Builder age(int age);
         public abstract Builder email(String email);

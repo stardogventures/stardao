@@ -2,6 +2,7 @@ package io.stardog.stardao.auto.processor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.auto.service.AutoService;
@@ -192,6 +193,7 @@ public class AutoPartialProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .returns(ClassName.bestGuess("Builder"))
                 .addParameter(optFieldType, fieldName)
+                .addAnnotation(AnnotationSpec.builder(JsonProperty.class).build())
                 .build();
     }
 
