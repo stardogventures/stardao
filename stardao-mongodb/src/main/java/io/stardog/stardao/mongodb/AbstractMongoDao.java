@@ -78,6 +78,10 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return modelMapper;
     }
 
+    public DocumentMapper<P> getPartialMapper() {
+        return partialMapper;
+    }
+
     protected Object generateId() {
         return new ObjectId();
     }
@@ -269,10 +273,10 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return ImmutableList.of();
     }
 
-    public Update<M> updateOf(M object) {
+    public Update<P> updateOf(P object) {
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
         if (object != null) {
-            Document doc = getModelMapper().toDocument(object);
+            Document doc = partialMapper.toDocument(object);
             for (String key : doc.keySet()) {
                 attribs.add(key);
             }
@@ -280,10 +284,10 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return Update.of(object, attribs.build());
     }
 
-    public Update<M> updateOf(M object, Iterable<String> removeFields) {
+    public Update<P> updateOf(P object, Iterable<String> removeFields) {
         ImmutableSet.Builder<String> attribs = ImmutableSet.builder();
         if (object != null) {
-            Document doc = getModelMapper().toDocument(object);
+            Document doc = partialMapper.toDocument(object);
             for (String key : doc.keySet()) {
                 attribs.add(key);
             }
