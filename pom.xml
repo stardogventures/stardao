@@ -13,6 +13,7 @@
         <module>stardao-mongodb</module>
         <module>stardao-dynamodb</module>
         <module>stardao-jersey</module>
+        <module>stardao-auto</module>
     </modules>
 
     <build>

@@ -1,0 +1,29 @@
+package $pkg;
+
+#foreach ($i in $imports)
+import $i;
+#end
+
+@AutoValue
+@Generated("io.stardog.stardao.auto.processor.AutoPartialProcessor")
+public abstract class $class {
+
+#foreach ($f in $fields)
+  #foreach ($a in ${f.annotations})
+  ${a}
+  #end
+  public abstract Optional<${f.type}> ${f.getter}();
+#end
+
+#if ($builder)
+@AutoValue.Builder
+@JsonPOJOBuilder(withPrefix = "")
+public abstract static class Builder {
+    #foreach ($f in $fields)
+        public abstract Builder ${f.name}(${f.type} ${f.name});
+    #end
+    public abstract $class build();
+}
+#end
+
+}

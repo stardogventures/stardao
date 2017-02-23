@@ -1,5 +1,6 @@
 .idea
 target
+stardao-auto/target
 stardao-core/target
 stardao-dynamodb/target
 stardao-dynamodb/native-libs
