@@ -1,5 +1,7 @@
 package io.stardog.stardao.validation;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import io.stardog.stardao.annotations.Required;
 import io.stardog.stardao.core.Update;
@@ -11,13 +13,16 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ModelValidator {
     private final Validator validator;
+    private final ObjectMapper mapper;
 
-    public ModelValidator(Validator validator) {
+    public ModelValidator(Validator validator, ObjectMapper mapper) {
         this.validator = validator;
+        this.mapper = mapper;
     }
 
     public List<ValidationError> getModelValidationErrors(Object object, Class validationGroup) {
@@ -30,6 +35,52 @@ public class ModelValidator {
                .collect(ImmutableList.toImmutableList());
     }
 
+    /**
+     * Validate a user-sourced create partial. Ensure that:
+     *   - the create is only touching @Updatable fields (@todo maybe add @Creatable for write-once fields)
+     *   - all non-optional @Updatable fields are being touched
+     *   - the object otherwise passes validation
+     * @param create    object to create
+     * @param fieldData field data for model
+     * @return  list of validation errors (empty if passes validation)
+     */
+    public List<ValidationError> getCreateValidationErrors(Object create, FieldData fieldData) {
+        if (create == null) {
+            return ImmutableList.of(ValidationError.of("", "create is null"));
+        }
+
+        ImmutableList.Builder<ValidationError> errors = ImmutableList.builder();
+        Map<String,Object> createMap = mapper.convertValue(create, new TypeReference<Map<String,Object>>() { });
+        Set<String> createFields = createMap.keySet();
+        for (String field : createFields) {
+            if (!fieldData.isUpdatable(field)) {
+                errors.add(ValidationError.of(field, "is not creatable"));
+            }
+        }
+        for (Field field : fieldData.getAll().values()) {
+            Object value = createMap.get(field.getName());
+            if (!field.isOptional() && field.isUpdatable() && (value == null || "".equals(value))) {
+                errors.add(ValidationError.of(field.getName(), "is required"));
+            }
+        }
+        Set<ConstraintViolation<Object>> violations = validator.validate(create, Default.class);
+        for (ConstraintViolation<?> cv : violations) {
+            String field = cv.getPropertyPath().toString();
+            if (createFields.contains(field)) {
+                errors.add(ValidationError.of(field, cv.getMessage()));
+            }
+        }
+        return errors.build();
+    }
+
+    /**
+     * Validate an user-sourced update. Ensure that:
+     *   - the update is only touching @Updatable fields
+     *   - the fields that are being touched all validate properly
+     * @param update    update
+     * @param fieldData field data for model
+     * @return  list of validation errors (empty if passes validation)
+     */
     public List<ValidationError> getUpdateValidationErrors(Update<?> update, FieldData fieldData) {
         if (update == null) {
             return ImmutableList.of(ValidationError.of("", "update is null"));
@@ -44,8 +95,8 @@ public class ModelValidator {
             }
         }
 
-        // validate the model in "required" mode -- but ignore fields that aren't being touched
-        Set<ConstraintViolation<Object>> violations = validator.validate(update.getPartial(), Required.class);
+        // validate the model -- but ignore fields that aren't being touched
+        Set<ConstraintViolation<Object>> violations = validator.validate(update.getPartial(), Default.class);
         for (ConstraintViolation<?> cv : violations) {
             String field = cv.getPropertyPath().toString();
             if (updateFields.contains(field)) {
@@ -64,8 +115,17 @@ public class ModelValidator {
         return true;
     }
 
+    @Deprecated
     public boolean validateRequired(Object model) {
         List<ValidationError> errors = getModelValidationErrors(model, Required.class);
+        if (!errors.isEmpty()) {
+            throw new DataValidationException(errors);
+        }
+        return true;
+    }
+
+    public boolean validateCreate(Object create, FieldData fieldData) {
+        List<ValidationError> errors = getCreateValidationErrors(create, fieldData);
         if (!errors.isEmpty()) {
             throw new DataValidationException(errors);
         }
