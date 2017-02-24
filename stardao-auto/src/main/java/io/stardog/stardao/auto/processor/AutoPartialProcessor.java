@@ -177,9 +177,10 @@ public class AutoPartialProcessor extends AbstractProcessor {
         TypeName fieldType = getFieldType(getter);
 
         return MethodSpec.methodBuilder(fieldName)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addModifiers(Modifier.PUBLIC)
                 .returns(ClassName.bestGuess("Builder"))
-                .addParameter(fieldType, fieldName)
+                .addParameter(fieldType.box(), fieldName)
+                .addStatement("return $L($T.ofNullable($L))", fieldName, Optional.class, fieldName)
                 .build();
     }
 
@@ -190,10 +191,9 @@ public class AutoPartialProcessor extends AbstractProcessor {
         TypeName optFieldType = ParameterizedTypeName.get(ClassName.get(Optional.class), fieldType.box());
 
         return MethodSpec.methodBuilder(fieldName)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addModifiers(Modifier.ABSTRACT)
                 .returns(ClassName.bestGuess("Builder"))
                 .addParameter(optFieldType, fieldName)
-                .addAnnotation(AnnotationSpec.builder(JsonProperty.class).build())
                 .build();
     }
 

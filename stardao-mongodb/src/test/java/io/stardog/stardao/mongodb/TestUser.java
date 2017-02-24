@@ -93,9 +93,10 @@ public abstract class TestUser {
     @JsonPOJOBuilder(withPrefix = "")
     public abstract static class Builder {
         public abstract Builder id(ObjectId id);
-        public abstract Builder categoryId(ObjectId id);
-        @JsonProperty
-        public abstract Builder categoryId(Optional<ObjectId> id);
+        public Builder categoryId(ObjectId id) {
+            return categoryId(Optional.ofNullable(id));
+        }
+        abstract Builder categoryId(Optional<ObjectId> id);
         public abstract Builder name(String name);
         public abstract Builder email(String email);
         public abstract Builder birthday(LocalDate birthday);
