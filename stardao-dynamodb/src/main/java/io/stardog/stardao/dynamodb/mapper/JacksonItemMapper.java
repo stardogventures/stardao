@@ -40,7 +40,7 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
         this.objectMapper = objectMapper;
         this.objectToItemFieldRenames = new HashMap<>();
         this.itemToObjectFieldRenames = new HashMap<>();
-        for (Field field : fieldData.getAll().values()) {
+        for (Field field : fieldData.getMap().values()) {
             if (!field.getStorageName().equals(field.getName())) {
                 objectToItemFieldRenames.put(field.getName(), field.getStorageName());
                 itemToObjectFieldRenames.put(field.getStorageName(), field.getName());

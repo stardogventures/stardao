@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class JacksonItemMapperTest {
     @Test
     public void testToItem() throws Exception {
-        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().all(ImmutableMap.of()).build());
+        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().map(ImmutableMap.of()).build());
 
         UUID id = UUID.randomUUID();
         Instant at = Instant.now();
@@ -31,7 +31,7 @@ public class JacksonItemMapperTest {
 
     @Test
     public void testToObject() throws Exception {
-        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().all(ImmutableMap.of()).build());
+        JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().map(ImmutableMap.of()).build());
 
         TestObject test = mapper.getObjectMapper().readValue("{\"at\":1479334772334}", TestObject.class);
         assertEquals("2016-11-16T22:19:32.334Z", test.getAt().toString());

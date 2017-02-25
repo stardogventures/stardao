@@ -47,7 +47,7 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         this.objectMapper = objectMapper;
         this.objectToDocumentFieldRenames = new HashMap<>();
         this.documentToObjectFieldRenames = new HashMap<>();
-        for (Field field : fieldData.getAll().values()) {
+        for (Field field : fieldData.getMap().values()) {
             if (!field.getStorageName().equals(field.getName())) {
                 objectToDocumentFieldRenames.put(field.getName(), field.getStorageName());
                 documentToObjectFieldRenames.put(field.getStorageName(), field.getName());

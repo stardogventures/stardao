@@ -17,7 +17,7 @@ public abstract class FieldData {
     public abstract Field getUpdatedAt();
     @Nullable
     public abstract Field getUpdatedBy();
-    public abstract Map<String,Field> getAll();
+    public abstract Map<String,Field> getMap();
 
     public abstract Builder toBuilder();
     public static FieldData.Builder builder() {
@@ -31,15 +31,7 @@ public abstract class FieldData {
         public abstract Builder createdBy(Field field);
         public abstract Builder updatedAt(Field field);
         public abstract Builder updatedBy(Field field);
-        public abstract Builder all(Map<String,Field> fields);
+        public abstract Builder map(Map<String,Field> fields);
         public abstract FieldData build();
-    }
-
-    public boolean isUpdatable(String fieldName) {
-        Field field = getAll().get(fieldName);
-        if (field == null) {
-            return false;
-        }
-        return field.isUpdatable();
     }
 }

@@ -37,7 +37,7 @@ public class ModelValidator {
 
     /**
      * Validate a user-sourced create partial. Ensure that:
-     *   - the create is only touching @Updatable fields (@todo maybe add @Creatable for write-once fields)
+     *   - the create is only touching @Updatable fields
      *   - all non-optional @Updatable fields are being touched
      *   - the object otherwise passes validation
      * @param create    object to create
@@ -52,12 +52,15 @@ public class ModelValidator {
         ImmutableList.Builder<ValidationError> errors = ImmutableList.builder();
         Map<String,Object> createMap = mapper.convertValue(create, new TypeReference<Map<String,Object>>() { });
         Set<String> createFields = createMap.keySet();
-        for (String field : createFields) {
-            if (!fieldData.isUpdatable(field)) {
-                errors.add(ValidationError.of(field, "is not creatable"));
+        for (String fieldName : createFields) {
+            Field field = fieldData.getMap().get(fieldName);
+            if (field == null) {
+                errors.add(ValidationError.of(fieldName, "does not exist"));
+            } else if (!field.isCreatable() && !field.isUpdatable()) {
+                errors.add(ValidationError.of(fieldName, "is not creatable"));
             }
         }
-        for (Field field : fieldData.getAll().values()) {
+        for (Field field : fieldData.getMap().values()) {
             Object value = createMap.get(field.getName());
             if (!field.isOptional() && field.isUpdatable() && (value == null || "".equals(value))) {
                 errors.add(ValidationError.of(field.getName(), "is required"));
@@ -76,6 +79,7 @@ public class ModelValidator {
     /**
      * Validate an user-sourced update. Ensure that:
      *   - the update is only touching @Updatable fields
+     *   - the update is not unsetting any non-optional fields
      *   - the fields that are being touched all validate properly
      * @param update    update
      * @param fieldData field data for model
@@ -89,9 +93,14 @@ public class ModelValidator {
         Set<String> updateFields = update.getUpdateFields();
 
         // ensure we are only touching @Updatable fields
-        for (String field : updateFields) {
-            if (!fieldData.isUpdatable(field)) {
-                errors.add(ValidationError.of(field, "is not updatable"));
+        for (String fieldName : updateFields) {
+            Field field = fieldData.getMap().get(fieldName);
+            if (field == null) {
+                errors.add(ValidationError.of(fieldName, "does not exist"));
+            } else if (!field.isUpdatable()) {
+                errors.add(ValidationError.of(fieldName, "is not updatable"));
+            } else if (!field.isOptional() && update.getRemoveFields().contains(fieldName)) {
+                errors.add(ValidationError.of(fieldName, "is required"));
             }
         }
 

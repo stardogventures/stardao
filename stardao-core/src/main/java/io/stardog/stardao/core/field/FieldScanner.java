@@ -2,13 +2,7 @@ package io.stardog.stardao.core.field;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
-import io.stardog.stardao.annotations.CreatedAt;
-import io.stardog.stardao.annotations.CreatedBy;
-import io.stardog.stardao.annotations.Id;
-import io.stardog.stardao.annotations.StorageName;
-import io.stardog.stardao.annotations.Updatable;
-import io.stardog.stardao.annotations.UpdatedAt;
-import io.stardog.stardao.annotations.UpdatedBy;
+import io.stardog.stardao.annotations.*;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -22,7 +16,7 @@ public class FieldScanner {
      */
     public FieldData scanAnnotations(Class modelClass) {
         FieldData.Builder builder = FieldData.builder();
-        ImmutableMap.Builder<String,Field> all = ImmutableMap.builder();
+        ImmutableMap.Builder<String,Field> fieldMap = ImmutableMap.builder();
 
         Map<Class,Field> found = new HashMap<>();
 
@@ -40,9 +34,10 @@ public class FieldScanner {
                         .name(fieldName)
                         .storageName(storageName)
                         .optional(method.getReturnType().getSimpleName().equals("Optional"))
+                        .creatable(method.isAnnotationPresent(Creatable.class))
                         .updatable(method.isAnnotationPresent(Updatable.class))
                         .build();
-                all.put(fieldName, field);
+                fieldMap.put(fieldName, field);
 
                 if (method.isAnnotationPresent(Id.class)) {
                     Field prev = found.get(Id.class);
@@ -90,7 +85,7 @@ public class FieldScanner {
                 }
             }
         }
-        builder.all(all.build());
+        builder.map(fieldMap.build());
         return builder.build();
     }
 

@@ -58,10 +58,10 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         Field id = fieldData.getId();
         if (id != null) {
             id = id.toBuilder().storageName(ID_FIELD).build();
-            Map<String,Field> all = new HashMap<>();
-            all.putAll(fieldData.getAll());
-            all.put(id.getName(), id);
-            fieldData = fieldData.toBuilder().id(id).all(all).build();
+            Map<String,Field> fieldMap = new HashMap<>();
+            fieldMap.putAll(fieldData.getMap());
+            fieldMap.put(id.getName(), id);
+            fieldData = fieldData.toBuilder().id(id).map(fieldMap).build();
         }
         return fieldData;
     }
