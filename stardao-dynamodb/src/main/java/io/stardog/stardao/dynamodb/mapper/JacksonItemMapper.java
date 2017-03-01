@@ -95,7 +95,7 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
             item = renameItem(item, objectToItemFieldRenames);
             return item;
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Unable to convert " + object);
+            throw new IllegalArgumentException("Unable to convert " + object, e);
         }
     }
 
