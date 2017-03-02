@@ -19,10 +19,7 @@ import org.bson.types.ObjectId;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     private final MongoCollection<Document> collection;
@@ -99,6 +96,32 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
             throw new DataNotFoundException(getDisplayModelName() + " not found");
         }
         return modelMapper.toObject(doc);
+    }
+
+    protected Optional<M> loadByQueryOpt(Document query) {
+        Document doc = collection.find(query).limit(1).first();
+        if (doc == null) {
+            return Optional.empty();
+        }
+        return Optional.of(modelMapper.toObject(doc));
+    }
+
+    /**
+     * Given a query and a sort, return all documents that match the query in sorted order.
+     * @param query query
+     * @param sort  sort order
+     * @return  results
+     */
+    protected Results<M,K> findByQuery(Document query, Document sort) {
+        FindIterable<Document> iterable = getCollection().find(query);
+        if (sort != null) {
+            iterable = iterable.sort(sort);
+        }
+        List<M> result = new ArrayList<>();
+        for (Document doc : iterable) {
+            result.add(getModelMapper().toObject(doc));
+        }
+        return Results.of(result);
     }
 
     /**
