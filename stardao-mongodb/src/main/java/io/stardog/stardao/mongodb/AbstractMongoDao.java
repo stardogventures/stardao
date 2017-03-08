@@ -91,7 +91,15 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     }
 
     protected M loadByQuery(Document query) {
-        Document doc = collection.find(query).limit(1).first();
+        return loadByQuery(query, null);
+    }
+
+    protected M loadByQuery(Document query, Document sort) {
+        FindIterable<Document> find = collection.find(query);
+        if (sort != null) {
+            find.sort(sort);
+        }
+        Document doc = find.limit(1).first();
         if (doc == null) {
             throw new DataNotFoundException(getDisplayModelName() + " not found");
         }
@@ -99,7 +107,15 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     }
 
     protected Optional<M> loadByQueryOpt(Document query) {
-        Document doc = collection.find(query).limit(1).first();
+        return loadByQueryOpt(query, null);
+    }
+
+    protected Optional<M> loadByQueryOpt(Document query, Document sort) {
+        FindIterable<Document> find = collection.find(query);
+        if (sort != null) {
+            find.sort(sort);
+        }
+        Document doc = find.limit(1).first();
         if (doc == null) {
             return Optional.empty();
         }
