@@ -7,11 +7,13 @@ import io.stardog.stardao.mongodb.TestUser;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
 import org.bson.Document;
+import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 import org.geojson.Point;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
@@ -91,6 +93,17 @@ public class JacksonDocumentMapperTest {
         assertEquals("Document{{type=Point, coordinates=[-73.9857, 40.7484]}}", doc.toString());
         Point back = pointMapper.toObject(doc);
         assertEquals(point, back);
+    }
+
+    @Test
+    public void testMapBigDecimal() throws Exception {
+        BigDecimal number = new BigDecimal("1234567.89");
+        Document doc = new Document("balance", new Decimal128(number));
+        TestUser user = mapper.toObject(doc);
+        assertEquals(number, user.getBalance());
+
+        Document convert = mapper.toDocument(user);
+        assertEquals(number, convert.get("balance"));
     }
 
     @Test

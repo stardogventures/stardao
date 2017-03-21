@@ -14,6 +14,7 @@ import org.bson.types.ObjectId;
 import org.geojson.Point;
 
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -69,6 +70,9 @@ public abstract class TestUser {
     public abstract Point getLocation();
 
     @Nullable
+    public abstract BigDecimal getBalance();
+
+    @Nullable
     @CreatedAt
     public abstract Instant getCreateAt();
 
@@ -109,6 +113,7 @@ public abstract class TestUser {
         public abstract Builder addresses(List<TestAddress> addresses);
         public abstract Builder addressesByRegion(Map<String,TestAddress> addresses);
         public abstract Builder location(Point point);
+        public abstract Builder balance(BigDecimal balance);
         public abstract Builder createAt(Instant at);
         public abstract Builder createId(ObjectId id);
         public abstract Builder updateAt(Instant at);
