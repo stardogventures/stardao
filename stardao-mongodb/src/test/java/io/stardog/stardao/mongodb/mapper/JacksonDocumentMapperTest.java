@@ -6,6 +6,7 @@ import io.stardog.stardao.mongodb.TestAddress;
 import io.stardog.stardao.mongodb.TestUser;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
+import io.stardog.stardao.mongodb.mapper.jackson.JacksonDocumentMapper;
 import org.bson.Document;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
@@ -31,7 +32,7 @@ public class JacksonDocumentMapperTest {
         Map<String,Field> fields = ImmutableMap.of(
                 "id", Field.builder().name("id").storageName("_id").optional(false).creatable(false).updatable(false).build());
         FieldData fieldData = FieldData.builder().map(fields).build();
-        mapper = new JacksonDocumentMapper<>(TestUser.class, JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER, fieldData);
+        mapper = new JacksonDocumentMapper<TestUser>(TestUser.class, fieldData);
     }
 
     @Test
@@ -96,23 +97,40 @@ public class JacksonDocumentMapperTest {
     }
 
     @Test
+    public void testMapInstant() throws Exception {
+        Instant at = Instant.now();
+        Date date = Date.from(at);
+
+        Document doc = new Document("loginAt", date);
+        TestUser user = mapper.toObject(doc);
+        assertEquals(at, user.getLoginAt());
+
+        Document convert = mapper.toDocument(user);
+        assertEquals(date, convert.get("loginAt"));
+    }
+
+    @Test
+    public void testMapLocalDate() throws Exception {
+        LocalDate date = LocalDate.of(1980, 5, 12);
+
+        Document doc = new Document("birthday", "1980-05-12");
+        TestUser user = mapper.toObject(doc);
+        assertEquals(date, user.getBirthday());
+
+        Document convert = mapper.toDocument(user);
+        assertEquals("1980-05-12", convert.get("birthday"));
+    }
+
+    @Test
     public void testMapBigDecimal() throws Exception {
         BigDecimal number = new BigDecimal("1234567.89");
+        Decimal128 bsonNumber = new Decimal128(number);
+
         Document doc = new Document("balance", new Decimal128(number));
         TestUser user = mapper.toObject(doc);
         assertEquals(number, user.getBalance());
 
         Document convert = mapper.toDocument(user);
-        assertEquals(number, convert.get("balance"));
-    }
-
-    @Test
-    public void testDbObjectToDocument() throws Exception {
-
-    }
-
-    @Test
-    public void testToDbObject() throws Exception {
-
+        assertEquals(bsonNumber, convert.get("balance"));
     }
 }

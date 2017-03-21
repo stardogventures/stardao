@@ -207,7 +207,7 @@ public class AbstractMongoDaoTest {
                     .append("updateAt", Date.from(now))
                     .append("updateId", updater))
                 .append("$unset", new Document("email", 1));
-        assertEquals(doc, expected);
+        assertEquals(expected, doc);
     }
 
     @Test

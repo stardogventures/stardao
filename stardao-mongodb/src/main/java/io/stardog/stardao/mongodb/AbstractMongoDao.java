@@ -12,11 +12,10 @@ import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.exceptions.DataNotFoundException;
 import io.stardog.stardao.mongodb.mapper.DocumentMapper;
-import io.stardog.stardao.mongodb.mapper.JacksonDocumentMapper;
+import io.stardog.stardao.mongodb.mapper.jackson.JacksonDocumentMapper;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
@@ -30,12 +29,8 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection) {
         super(modelClass, partialClass);
         this.collection = collection;
-        this.modelMapper = new JacksonDocumentMapper<>(modelClass,
-                JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER,
-                getFieldData());
-        this.partialMapper = new JacksonDocumentMapper<>(partialClass,
-                JacksonDocumentMapper.DEFAULT_OBJECT_MAPPER,
-                getFieldData());
+        this.modelMapper = new JacksonDocumentMapper<>(modelClass, getFieldData());
+        this.partialMapper = new JacksonDocumentMapper<>(partialClass, getFieldData());
     }
 
     public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection, DocumentMapper<M> modelMapper, DocumentMapper<P> partialMapper) {

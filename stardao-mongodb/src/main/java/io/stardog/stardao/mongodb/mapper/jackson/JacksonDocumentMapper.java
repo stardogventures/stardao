@@ -1,36 +1,38 @@
-package io.stardog.stardao.mongodb.mapper;
+package io.stardog.stardao.mongodb.mapper.jackson;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.ImmutableMap;
-import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import io.stardog.stardao.core.field.Field;
 import io.stardog.stardao.core.field.FieldData;
-import io.stardog.stardao.mongodb.mapper.serializers.MongoModule;
+import io.stardog.stardao.mongodb.mapper.DocumentMapper;
+import io.stardog.stardao.mongodb.mapper.jackson.modules.ExtendedJsonModule;
+import io.stardog.stardao.mongodb.mapper.jackson.modules.MongoModule;
 import org.bson.Document;
-import org.mongojack.MongoJsonMappingException;
-import org.mongojack.internal.MongoJackModule;
-import org.mongojack.internal.object.BsonObjectGenerator;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
     private final Class<M> modelClass;
     private final ObjectMapper objectMapper;
+    private final ObjectMapper extendedJsonMapper;
     private final Map<String,String> objectToDocumentFieldRenames;
     private final Map<String,String> documentToObjectFieldRenames;
+
+    public final static ObjectMapper DEFAULT_EXTENDED_JSON_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new ExtendedJsonModule());
 
     public final static ObjectMapper DEFAULT_OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            .registerModule(new MongoJackModule())
             .registerModule(new JavaTimeModule())
             .registerModule(new Jdk8Module())
             .registerModule(new MongoModule());
@@ -38,13 +40,19 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
     public JacksonDocumentMapper(Class<M> modelClass) {
         this.modelClass = modelClass;
         this.objectMapper = DEFAULT_OBJECT_MAPPER;
+        this.extendedJsonMapper = DEFAULT_EXTENDED_JSON_MAPPER;
         this.objectToDocumentFieldRenames = ImmutableMap.of();
         this.documentToObjectFieldRenames = ImmutableMap.of();
     }
 
-    public JacksonDocumentMapper(Class<M> modelClass, ObjectMapper objectMapper, FieldData fieldData) {
+    public JacksonDocumentMapper(Class<M> modelClass, FieldData fieldData) {
+        this(modelClass, fieldData, DEFAULT_OBJECT_MAPPER, DEFAULT_EXTENDED_JSON_MAPPER);
+    }
+
+    public JacksonDocumentMapper(Class<M> modelClass, FieldData fieldData, ObjectMapper objectMapper, ObjectMapper extendedJsonMapper) {
         this.modelClass = modelClass;
         this.objectMapper = objectMapper;
+        this.extendedJsonMapper = extendedJsonMapper;
         this.objectToDocumentFieldRenames = new HashMap<>();
         this.documentToObjectFieldRenames = new HashMap<>();
         for (Field field : fieldData.getMap().values()) {
@@ -68,10 +76,15 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         if (object == null) {
             return null;
         }
-        DBObject dbObject = mongoJackConvert(object);
-        Document document = dbObjectToDocument(dbObject);
-        Document renamed = renameDocument(document, objectToDocumentFieldRenames);
-        return renamed;
+        try {
+            String extendedJson = extendedJsonMapper.writeValueAsString(object);
+            Document document = Document.parse(extendedJson);
+            Document renamed = renameDocument(document, objectToDocumentFieldRenames);
+            return renamed;
+
+        } catch (JsonProcessingException e) {
+            throw new MongoException("Problem converting object to extended JSON: " + e.getMessage(), e);
+        }
     }
 
     protected Document renameDocument(Document doc, Map<String,String> renames) {
@@ -81,35 +94,5 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
             renamedDoc.put(renamedKey, doc.get(key));
         }
         return renamedDoc;
-    }
-
-    public Document dbObjectToDocument(DBObject dbObject) {
-        if (dbObject == null) {
-            return null;
-        }
-        Document doc = new Document();
-        for (String key : dbObject.keySet()) {
-            Object val = dbObject.get(key);
-            doc.put(key, val);
-        }
-        return doc;
-    }
-
-    // from mongojack
-    private DBObject mongoJackConvert(M object) throws MongoException {
-        if (object == null) {
-            return null;
-        }
-        BsonObjectGenerator generator = new BsonObjectGenerator();
-        try {
-            objectMapper.writeValue(generator, object);
-        } catch (JsonMappingException e) {
-            throw new MongoJsonMappingException(e);
-        } catch (IOException e) {
-            // This shouldn't happen
-            throw new MongoException(
-                    "Unknown error occurred converting BSON to object", e);
-        }
-        return generator.getDBObject();
     }
 }
