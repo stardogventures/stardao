@@ -220,6 +220,9 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     protected <T> T getFieldValue(Document doc, String field, Class<T> type) {
         if (type == LocalDate.class) {
             return type.cast(LocalDate.parse(doc.getString(field)));
+        } else if (type == Instant.class) {
+            Date value = doc.get(field, Date.class);
+            return value != null ? type.cast(value.toInstant()) : null;
         } else {
             return doc.get(field, type);
         }
