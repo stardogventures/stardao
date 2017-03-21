@@ -236,7 +236,7 @@ public class AbstractDynamoDaoTest {
         UUID updaterId = UUID.randomUUID();
         Instant now = Instant.now();
         Update<TestModel> update = Update.of(
-                TestModel.builder().name("Test").birthday(LocalDate.of(1985, 10, 26)).build(),
+                TestModel.builder().name("Test").birthday(LocalDate.of(1985, 10, 26)).country("US").build(),
                 ImmutableSet.of("name", "birthday"),
                 ImmutableSet.of("email"));
         UpdateItemSpec spec = dao.toUpdateItemSpec(updateId, update, now, updaterId);
@@ -244,7 +244,7 @@ public class AbstractDynamoDaoTest {
         assertEquals(updaterId.toString(), spec.getValueMap().get(":updateId"));
         assertEquals("Test", spec.getValueMap().get(":name"));
         assertEquals(updaterId.toString(), spec.getValueMap().get(":updateId"));
-        assertEquals(new BigDecimal(now.toEpochMilli()), spec.getValueMap().get(":updateAt"));
+        assertEquals(new Long(now.toEpochMilli()), spec.getValueMap().get(":updateAt"));
     }
 
     @Test

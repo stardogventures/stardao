@@ -41,13 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     protected final ItemMapper<M> modelMapper;
@@ -343,18 +337,22 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         ValueMap valueMap = new ValueMap();
 
         Item setFields = partialMapper.toItem(update.getPartial());
+        Map<String,Object> set = new LinkedHashMap<>();
+        for (String field : update.getSetFields()) {
+            set.put(field, setFields.get(field));
+        }
 
         // add the @UpdatedBy and @UpdatedAt fields
         Field updatedByField = getFieldData().getUpdatedBy();
         if (updatedByField != null && updaterId != null) {
-            setFields = setFields.with(updatedByField.getStorageName(), toStorageValue(updaterId));
+            set.put(updatedByField.getStorageName(), toStorageValue(updaterId));
         }
         Field updatedAtField = getFieldData().getUpdatedAt();
         if (updatedAtField != null && updateAt != null) {
-            setFields = setFields.with(updatedAtField.getStorageName(), toStorageValue(updateAt));
+            set.put(updatedAtField.getStorageName(), toStorageValue(updateAt));
         }
 
-        for (Map.Entry<String,Object> e : setFields.asMap().entrySet()) {
+        for (Map.Entry<String,Object> e : set.entrySet()) {
             String key = e.getKey();
             nameMap.put("#" + key, key);
             valueMap.put(":" + key, toStorageValue(e.getValue()));
