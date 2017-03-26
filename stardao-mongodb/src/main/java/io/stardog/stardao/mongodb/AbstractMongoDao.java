@@ -14,6 +14,7 @@ import io.stardog.stardao.exceptions.DataNotFoundException;
 import io.stardog.stardao.mongodb.mapper.DocumentMapper;
 import io.stardog.stardao.mongodb.mapper.jackson.JacksonDocumentMapper;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import java.time.Instant;
@@ -33,7 +34,8 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         this.partialMapper = new JacksonDocumentMapper<>(partialClass, getFieldData());
     }
 
-    public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection, DocumentMapper<M> modelMapper, DocumentMapper<P> partialMapper) {
+    public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection,
+                            DocumentMapper<M> modelMapper, DocumentMapper<P> partialMapper) {
         super(modelClass, partialClass);
         this.collection = collection;
         this.modelMapper = modelMapper;
@@ -78,6 +80,11 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return new ObjectId();
     }
 
+    /**
+     * Load an object that might not exist by id. Will return empty Optional if the document is not present.
+     * @param id    primary key value
+     * @return  optional containing the object, or empty if not found
+     */
     @Override
     public Optional<M> loadOpt(K id) {
         Document query = new Document(ID_FIELD, id);
@@ -85,11 +92,24 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return Optional.ofNullable(modelMapper.toObject(doc));
     }
 
-    protected M loadByQuery(Document query) {
+    /**
+     * Load a single object by an arbitrary MongoDB query. Will return the first match of the query.
+     * @param query MongoDB query
+     * @return  model object
+     * @throws DataNotFoundException    if there is no object matching the query
+     */
+    protected M loadByQuery(Bson query) {
         return loadByQuery(query, null);
     }
 
-    protected M loadByQuery(Document query, Document sort) {
+    /**
+     * Load a single object by an arbitrary MongoDB query, applying a sort. Will return the first match of the query.
+     * @param query MongoDB query
+     * @param sort  MongoDB sort object
+     * @return  model object
+     * @throws DataNotFoundException    if there is no object matching the query
+     */
+    protected M loadByQuery(Bson query, Bson sort) {
         FindIterable<Document> find = collection.find(query);
         if (sort != null) {
             find.sort(sort);
@@ -101,11 +121,24 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return modelMapper.toObject(doc);
     }
 
-    protected Optional<M> loadByQueryOpt(Document query) {
+    /**
+     * Load a single object by an arbitrary MongoDB query. Will return an Optional containing the first match found, or
+     * empty Optional if not found.
+     * @param query MongoDB query
+     * @return  Optional containing the found object
+     */
+    protected Optional<M> loadByQueryOpt(Bson query) {
         return loadByQueryOpt(query, null);
     }
 
-    protected Optional<M> loadByQueryOpt(Document query, Document sort) {
+    /**
+     * Load a single object by an arbitrary MongoDB query and sort order. Will return an Optional containing the first
+     * match found, or empty Optional if not found.
+     * @param query MongoDB query
+     * @param sort  MongoDB sort object
+     * @return  Optional containing the found object
+     */
+    protected Optional<M> loadByQueryOpt(Bson query, Bson sort) {
         FindIterable<Document> find = collection.find(query);
         if (sort != null) {
             find.sort(sort);
@@ -123,7 +156,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * @param sort  sort order
      * @return  results
      */
-    protected Results<M,K> findByQuery(Document query, Document sort) {
+    protected Results<M,K> findByQuery(Bson query, Bson sort) {
         FindIterable<Document> iterable = getCollection().find(query);
         if (sort != null) {
             iterable = iterable.sort(sort);
@@ -221,6 +254,23 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         } else {
             return doc.get(field, type);
         }
+    }
+
+    /**
+     * Given a query, check if there are any documents matching that query, with the exception of excludeId.
+     * Especially useful for checking whether fields are unique.
+     * @param query MongoDB query
+     * @param excludeId key value to exclude from consideration
+     * @return  true if
+     */
+    protected boolean exists(Document query, K excludeId) {
+        FindIterable<Document> find = getCollection().find(query).projection(new Document("_id", 1)).limit(2);
+        for (Document doc : find) {
+            if (!doc.get("_id").equals(excludeId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

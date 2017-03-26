@@ -63,6 +63,12 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         }
     }
 
+    /**
+     * Given a MongoDB Document, convert it to a POJO model, renaming fields as needed, using the Jackson object mapper.
+     * @param document  document returned from MongoDB
+     * @return  POJO model to convert to
+     */
+    @Override
     public M toObject(Document document) {
         if (document == null) {
             return null;
@@ -71,6 +77,12 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         return objectMapper.convertValue(renamed, modelClass);
     }
 
+    /**
+     * Given a POJO, convert it to a MongoDB Document, renaming fields as needed, by initially transforming to MongoDB
+     * extended JSON using Jackson, and then use MongoDB's built-in Document parse().
+     * @param object
+     * @return
+     */
     @Override
     public Document toDocument(M object) {
         if (object == null) {
@@ -87,6 +99,12 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         }
     }
 
+    /**
+     * Given a document and a set of fields to rename, rename all of the fields.
+     * @param doc   document
+     * @param renames   map of old field names to new field names
+     * @return  document with the field names transformed
+     */
     protected Document renameDocument(Document doc, Map<String,String> renames) {
         Document renamedDoc = new Document();
         for (String key : doc.keySet()) {

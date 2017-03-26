@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @AutoValue
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonDeserialize(builder=AutoValue_TestUser.Builder.class)
 public abstract class TestUser {
     @Id

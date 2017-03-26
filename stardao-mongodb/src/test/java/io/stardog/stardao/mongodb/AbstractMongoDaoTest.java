@@ -1,6 +1,7 @@
 package io.stardog.stardao.mongodb;
 
 import com.github.fakemongo.Fongo;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
@@ -26,6 +27,11 @@ public class AbstractMongoDaoTest {
         Fongo fongo = new Fongo("fake-mongo");
         dao = new TestUserDao(fongo.getMongo().getDatabase("test-mongo").getCollection("test-user"));
 
+    }
+
+    @Test
+    public void testGetCollectionName() throws Exception {
+        assertEquals("test-user", dao.getCollectionName());
     }
 
     @Test
@@ -65,6 +71,36 @@ public class AbstractMongoDaoTest {
         } catch (DataNotFoundException e) {
             assertEquals("TestUser not found", e.getMessage());
         }
+    }
+
+    @Test
+    public void testLoadByQuerySort() throws Exception {
+        TestUser created1 = dao.create(TestUser.builder().name("Ian").email("ian1@example.com").build());
+        TestUser created2 = dao.create(TestUser.builder().name("Ian").email("ian2@example.com").build());
+
+        TestUser load = dao.loadByQuery(new Document("name", "Ian"), new Document("email", 1));
+        assertEquals(created1, load);
+    }
+
+    @Test
+    public void testLoadByQueryOpt() throws Exception {
+        TestUser created = dao.create(TestUser.builder().name("Ian").email("ian@example.com").build());
+
+        TestUser load = dao.loadByQueryOpt(new Document("email", "ian@example.com")).get();
+        assertEquals(load, created);
+
+        assertFalse(dao.loadByQueryOpt(new Document("email", "bob@example.com")).isPresent());
+    }
+
+    @Test
+    public void testFindByQuery() throws Exception {
+        TestUser created1 = dao.create(TestUser.builder().name("Ian").email("ian1@example.com").build());
+        TestUser created2 = dao.create(TestUser.builder().name("Ian").email("ian2@example.com").build());
+
+        Results<TestUser,ObjectId> results = dao.findByQuery(new Document("name", "Ian"), new Document("email", -1));
+        assertEquals(2, results.getData().size());
+        assertEquals(created2, results.getData().get(0));
+        assertEquals(created1, results.getData().get(1));
     }
 
     @Test
@@ -129,6 +165,15 @@ public class AbstractMongoDaoTest {
         Results<TestUser,String> nomatch = dao.findWithRangedPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
         assertEquals(0, nomatch.getData().size());
         assertFalse(nomatch.getNext().isPresent());
+    }
+
+    @Test
+    public void testExists() throws Exception {
+        TestUser created = dao.create(TestUser.builder().name("Ian").build());
+
+        assertFalse(dao.exists(new Document("name", "Bob"), null));
+        assertTrue(dao.exists(new Document("name", "Ian"), null));
+        assertFalse(dao.exists(new Document("name", "Bob"), created.getId()));
     }
 
     @Test
@@ -230,21 +275,47 @@ public class AbstractMongoDaoTest {
 
     @Test
     public void testIterateAll() throws Exception {
-
+        TestUser created = dao.create(TestUser.builder().name("Ian").email("ian@example.com").build());
+        int count = 0;
+        for (TestUser user : dao.iterateAll()) {
+            assertEquals(created, user);
+            count++;
+        }
+        assertEquals(1, count);
     }
 
     @Test
     public void testInitTable() throws Exception {
-
+        dao.initTable();
+        int count = 0;
+        for (Document doc : dao.getCollection().listIndexes()) {
+            count++;
+        }
+        assertEquals(2, count);
     }
 
     @Test
     public void testDropTable() throws Exception {
-
+        dao.create(TestUser.builder().name("Ian").build());
+        dao.dropTable();
+        assertFalse(dao.exists(new Document("name", "Ian"), null));
     }
 
     @Test
-    public void testGetIndexes() throws Exception {
+    public void testUpdateOf() throws Exception {
+        Update<TestUser> update = dao.updateOf(TestUser.builder().name("Rename").build());
+        assertTrue(update.isUpdateField("name"));
+        assertEquals(ImmutableSet.of("name"), update.getUpdateFields());
+        assertEquals("Rename", update.getPartial().getName());
+    }
 
+    @Test
+    public void testUpdateOfWithRemoveFields() throws Exception {
+        Update<TestUser> update = dao.updateOf(TestUser.builder().name("Rename").build(), ImmutableList.of("email"));
+        assertTrue(update.isUpdateField("name"));
+        assertTrue(update.isUpdateField("email"));
+        assertEquals("Rename", update.getPartial().getName());
+        assertEquals(ImmutableSet.of("name"), update.getSetFields());
+        assertEquals(ImmutableSet.of("email"), update.getRemoveFields());
     }
 }
