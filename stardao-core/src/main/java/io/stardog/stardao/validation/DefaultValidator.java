@@ -20,11 +20,6 @@ public class DefaultValidator {
         return VALIDATOR.validateCreate(create, dao.getFieldData());
     }
 
-    @Deprecated
-    public static boolean validateRequired(Object model) {
-        return VALIDATOR.validateRequired(model);
-    }
-
     public static <T> boolean validateUpdate(Update<T> update, AbstractDao<?,T,?,?> dao) {
         return VALIDATOR.validateUpdate(update, dao.getFieldData());
     }

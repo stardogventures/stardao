@@ -62,7 +62,7 @@ public class ModelValidator {
         }
         for (Field field : fieldData.getMap().values()) {
             Object value = createMap.get(field.getName());
-            if (!field.isOptional() && field.isUpdatable() && (value == null || "".equals(value))) {
+            if (!field.isOptional() && (field.isCreatable() || field.isUpdatable()) && (value == null || "".equals(value))) {
                 errors.add(ValidationError.of(field.getName(), "is required"));
             }
         }
@@ -118,15 +118,6 @@ public class ModelValidator {
 
     public boolean validateModel(Object model) {
         List<ValidationError> errors = getModelValidationErrors(model, Default.class);
-        if (!errors.isEmpty()) {
-            throw new DataValidationException(errors);
-        }
-        return true;
-    }
-
-    @Deprecated
-    public boolean validateRequired(Object model) {
-        List<ValidationError> errors = getModelValidationErrors(model, Required.class);
         if (!errors.isEmpty()) {
             throw new DataValidationException(errors);
         }
