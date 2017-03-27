@@ -1,6 +1,7 @@
 package io.stardog.stardao.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
 import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
@@ -222,12 +223,19 @@ public class AbstractDynamoDaoTest {
 
     @Test
     public void testUpdate() throws Exception {
-
+        TestModel model = dao.create(TestModel.builder().name("Ian").build());
+        dao.update(model.getId(), dao.updateOf(TestModel.builder().name("Rename").build()));
+        TestModel change = dao.load(model.getId());
+        assertEquals("Rename", change.getName());
     }
 
     @Test
     public void testUpdateAndReturn() throws Exception {
-
+        TestModel model = dao.create(TestModel.builder().name("Ian").build());
+        TestModel prev = dao.updateAndReturn(model.getId(), dao.updateOf(TestModel.builder().name("Rename").build()));
+        assertEquals(model, prev);
+        TestModel change = dao.load(model.getId());
+        assertEquals("Rename", change.getName());
     }
 
     @Test
@@ -248,8 +256,26 @@ public class AbstractDynamoDaoTest {
     }
 
     @Test
-    public void testDelete() throws Exception {
+    public void testUpdateOf() throws Exception {
+        Update<TestModel> update = dao.updateOf(TestModel.builder().name("Ian").build());
+        assertEquals("Ian", update.getPartial().getName());
+        assertTrue(update.isUpdateField("name"));
+    }
 
+    @Test
+    public void testUpdateOfWithRemove() throws Exception {
+        Update<TestModel> update = dao.updateOf(TestModel.builder().name("Ian").build(), ImmutableList.of("email"));
+        assertEquals("Ian", update.getPartial().getName());
+        assertTrue(update.isUpdateField("name"));
+        assertTrue(update.isUpdateField("email"));
+        assertEquals(ImmutableSet.of("email"), update.getRemoveFields());
+    }
+
+    @Test
+    public void testDelete() throws Exception {
+        TestModel created = dao.create(TestModel.builder().name("Test").build());
+        dao.delete(created.getId());
+        assertFalse(dao.loadOpt(created.getId()).isPresent());
     }
 
     @Test
@@ -284,7 +310,9 @@ public class AbstractDynamoDaoTest {
 
     @Test
     public void testEnsureIndexes() throws Exception {
-
+        dao.ensureIndexes();
+        Index index = dao.getTable().getIndex("orgId_createAt");
+        assertNotNull(index);
     }
 
     @Test
