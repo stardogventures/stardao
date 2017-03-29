@@ -73,6 +73,10 @@ public abstract class TestModel {
     @Nullable
     public abstract Instant getLoginAt();
 
+    public Instant getLoginAt(long millis) {
+        return Instant.ofEpochMilli(millis);
+    }
+
     public abstract Builder toBuilder();
     public static TestModel.Builder builder() {
         return new AutoValue_TestModel.Builder();

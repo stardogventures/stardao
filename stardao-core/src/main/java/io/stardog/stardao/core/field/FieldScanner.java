@@ -95,6 +95,9 @@ public class FieldScanner {
      * @return  derived field name
      */
     protected String toFieldName(Method method) {
+        if (method.getParameterCount() > 0) {
+            return null;
+        }
         if (method.getName().startsWith("get")) {
             String field = method.getName().substring(3);
             return field.substring(0, 1).toLowerCase() + field.substring(1);
