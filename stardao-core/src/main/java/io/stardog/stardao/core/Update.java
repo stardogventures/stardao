@@ -1,15 +1,18 @@
 package io.stardog.stardao.core;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.stardog.stardao.jackson.UpdateDeserializer;
+import io.stardog.stardao.jackson.UpdateSerializer;
 
 import java.util.Set;
 
 @AutoValue
 @JsonDeserialize(using = UpdateDeserializer.class)
+@JsonSerialize(using = UpdateSerializer.class)
 public abstract class Update<P> {
     public abstract P getPartial();
     public abstract Set<String> getSetFields();
