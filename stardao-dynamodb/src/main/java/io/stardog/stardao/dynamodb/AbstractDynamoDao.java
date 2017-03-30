@@ -120,7 +120,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         if (val == null) {
             return null;
         }
-        if (val instanceof Number || val instanceof Collection) {
+        if (val instanceof Number || val instanceof Collection || val instanceof Map || val instanceof Boolean) {
             return val;
         } else if (val instanceof Instant) {
             return ((Instant) val).toEpochMilli();

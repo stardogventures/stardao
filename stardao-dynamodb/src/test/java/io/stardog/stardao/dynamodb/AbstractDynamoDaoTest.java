@@ -15,6 +15,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -276,6 +278,12 @@ public class AbstractDynamoDaoTest {
         TestModel created = dao.create(TestModel.builder().name("Test").build());
         dao.delete(created.getId());
         assertFalse(dao.loadOpt(created.getId()).isPresent());
+    }
+
+    @Test
+    public void testToStorageValue() throws Exception {
+        Map<String,Object> myMap = ImmutableMap.of("test", 1);
+        assertEquals(myMap, dao.toStorageValue(myMap));
     }
 
     @Test
