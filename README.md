@@ -128,25 +128,31 @@ Of course, if you want to add a save() to your Dao subclasses, nothing's stoppin
 
 ### What about arbitrary queries?
 
-Again purely in the author's opinion, all queries should be hand-written and live within the Dao. A codebase that allows any caller throughout the application to make any arbitrary queries -- especially arbitrary queries whose impact on the underlying storage layer are not fully understood -- is a dangerous codebase.
+Again purely in the author's opinion, all queries should be hand-written and live within the DAO. A codebase that allows any caller throughout the application to make any arbitrary queries -- especially arbitrary queries whose impact on the underlying storage layer are not fully understood -- is a dangerous codebase.
 
 The author is also not fond of layering a special query syntax or DSL on top of the native driver. These tend to just add indirection, and the native syntax is usually just as easy to learn.
 
 So you are advised to simply write findX methods on your subclass, using the specific functionality of the native drivers.
 
-### Validation
+## Validation
 
-The ``ModelValidator`` class provides a shortcut to Hibernate Validation that allows you to easily validate your models.
+The ``ModelValidator`` class provides a convenient shortcut to Hibernate Validation that allows you to easily validate your models, especially as passed in from JAX-RS endpoints.
 
-- `validateModel()` validates every field on the model
-- `validateRequired()` validates using the `Required` group
-- `validateUpdate()` validates an `Update`, ensuring that the `Update` is only touching `Updatable` fields and that it is not unsetting any `Required` fields or setting any fields to invalid values
+- `validateModel()` validates every field present on the model, without regard for which ones are optional, updatable, or creatable
+- `validateCreate()` validates the fields present on a model, ensuring that it is a valid user-submitted creation. Specifically that:
+  - only `@Updatable` or `@Creatable` fields are present
+  - all non-optional `@Updatable` and `@Creatable` fields are present
+  - all present fields pass validation
+- `validateUpdate()` validates an `Update`, ensuring that:
+  - the `Update` is only touching `@Updatable` fields
+  - the `Update` is not unsetting any non-optional fields
+  - all fields being set pass validation
 
 In each case the validate method will throw a runtime `DataValidationException` if it fails, and return true if it succeeds.
 
 You should probably inject a `ModelValidator` instance, but for convenience, there is a static `DefaultModelValidator` that implements the methods.
 
-### Using with Jersey / Dropwizard: Partial Updates
+## Using with Jersey / Dropwizard: Partial Updates
 
 The `Update<P>` object comes with a Jackson deserializer, so you can include it as the body for PATCH requests.
 
@@ -174,7 +180,7 @@ It will be interpreted as a request to set the `name` field to `Stardog Ventures
 
 Empty strings also will be treated as a request to unset fields.
 
-### Using with Jersey / Dropwizard: Exception Mapper
+## Using with Jersey / Dropwizard: Exception Mapper
 
 You probably want to register the Stardao-specific exception modelMapper classes with Jersey. `DataValidationExceptionMapper` in particular provides a friendly 400 which contains all the errors for extraction.
 
