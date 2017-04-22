@@ -89,8 +89,16 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * Returns the item modelMapper used to convert POJOs to Items and vice versa
      * @return  the item modelMapper
      */
-    public ItemMapper<M> getModelMapper() {
+    protected ItemMapper<M> getModelMapper() {
         return modelMapper;
+    }
+
+    /**
+     * Returns the item modelMapper used to convert POJOs to Items and vice versa
+     * @return  the item partialMapper
+     */
+    protected ItemMapper<P> getPartialMapper() {
+        return partialMapper;
     }
 
     /**
@@ -149,6 +157,18 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * @return  object
      */
     protected M loadByIndex(String indexName, String key, Object value) {
+        Optional<M> model = loadByIndexOpt(indexName, key, value);
+        return model.orElseThrow(() -> new DataNotFoundException(getDisplayModelName() + " not found: " + value));
+    }
+
+    /**
+     * Load an object by a secondary index key / value. Intended to be called by wrapper methods in the subclass.
+     * @param indexName name of the index to search
+     * @param key   key attribute name
+     * @param value value object
+     * @return  object
+     */
+    protected Optional<M> loadByIndexOpt(String indexName, String key, Object value) {
         QuerySpec spec = new QuerySpec()
                 .withKeyConditionExpression("#key = :value")
                 .withNameMap(new NameMap().with("#key", key))
@@ -157,9 +177,9 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         Index index = table.getIndex(indexName);
         ItemCollection<QueryOutcome> items = index.query(spec);
         for (Item i : items) {
-            return modelMapper.toObject(i);
+            return Optional.of(modelMapper.toObject(i));
         }
-        throw new DataNotFoundException(getDisplayModelName() + " not found: " + value);
+        return Optional.empty();
     }
 
     /**
