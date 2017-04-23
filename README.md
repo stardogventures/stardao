@@ -20,6 +20,66 @@ You also might like these DAO superclasses if:
 
 ## How To Use Stardao
 
+### Installation
+
+To use Stardao, add the following to your project's POM file:
+
+```
+<properties>
+    <stardao.version>0.3.0</stardao.version>
+    ...
+</properties>
+
+<dependencies>
+  <dependency>
+    <groupId>io.stardog.stardao</groupId>
+    <artifactId>stardao-core</artifactId>
+    <version>${stardao.version}</version>
+  </dependency>
+  ...
+</dependencies>
+```
+
+Then add any of the following modules you want to use. If you are using DynamoDB:
+
+```
+  <dependency>
+    <groupId>io.stardog.stardao</groupId>
+    <artifactId>stardao-dynamodb</artifactId>
+    <version>${stardao.version}</version>
+  </dependency>
+```
+
+If you're using MongoDB:
+
+```
+  <dependency>
+    <groupId>io.stardog.stardao</groupId>
+    <artifactId>stardao-dynamodb</artifactId>
+    <version>${stardao.version}</version>
+  </dependency>
+```
+
+If you want to use the `@AutoPartial` feature for automatically generating Partial entity classes:
+
+```
+  <dependency>
+    <groupId>io.stardog.stardao</groupId>
+    <artifactId>stardao-auto</artifactId>
+    <version>${stardao.version}</version>
+  </dependency>
+```
+
+If you're using Jersey:
+
+```
+  <dependency>
+    <groupId>io.stardog.stardao</groupId>
+    <artifactId>stardao-jersey</artifactId>
+    <version>${stardao.version}</version>
+  </dependency>
+```
+
 ### Define POJOs
 
 Define your basic POJO entity model classes however you like. They can be immutable or not, as you prefer. The classes must be capable of being de/serialized with [Jackson](https://github.com/FasterXML/jackson), and they must use getters for field access.
