@@ -280,10 +280,10 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
 
     /**
      * Return a DynamoDB item from a partial, possibly adding timestamp and user id fields
-     * @param partial
-     * @param createAt
-     * @param creatorId
-     * @return
+     * @param partial   partial to convert to an item
+     * @param createAt  create timestamp, or null
+     * @param creatorId creator id
+     * @return  item that can be stored in DynamoDB
      */
     protected Item toCreateItem(P partial, Instant createAt, I creatorId) {
         Item item = partialMapper.toItem(partial);
@@ -349,6 +349,8 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * Convert an id and update object into an UpdateItemSpec
      * @param id    id of object
      * @param update    update data
+     * @param updateAt    timestamp of update
+     * @param updaterId    user id of updater
      * @return  spec containing the DynamoDB update
      */
     protected UpdateItemSpec toUpdateItemSpec(K id, Update<P> update, Instant updateAt, I updaterId) {
@@ -455,7 +457,6 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
 
     /**
      * Create the table, if it does not already exist, and wait for it to be active.
-     * @throws InterruptedException
      */
     public void initTable() {
         CreateTableRequest request = new CreateTableRequest()

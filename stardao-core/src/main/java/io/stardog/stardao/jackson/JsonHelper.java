@@ -39,7 +39,7 @@ public class JsonHelper {
      * Create an Update object, given the class of the update type
      * @param json  JSON string
      * @param klazz class of the update type
-     * @param <T>
+     * @param <T>   update type
      * @return
      */
     public static <T> Update<T> update(String json, Class<T> klazz) {

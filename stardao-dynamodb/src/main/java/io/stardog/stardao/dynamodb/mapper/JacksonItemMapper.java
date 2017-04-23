@@ -54,8 +54,8 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
 
     /**
      * Map a DynamoDB Item to a POJO, using the Jackson object modelMapper.
-     * @param item
-     * @return
+     * @param item  item to convert to a POJO
+     * @return  POJO representation of item
      */
     public M toObject(Item item) {
         if (item == null) {
@@ -73,8 +73,8 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
 
     /**
      * Map a POJO to a DynamoDB Item, using the Jackson object modelMapper.
-     * @param object
-     * @return
+     * @param object    POJO to convert to an item
+     * @return  item representation of POJO
      */
     public Item toItem(Object object) {
         try {

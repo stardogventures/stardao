@@ -73,7 +73,6 @@ public abstract class AbstractDao<M,P,K,I> implements Dao<M,P,K> {
      * @param id    id of the object to update
      * @param update    update data
      * @param updateAt    timestamp of the update
-     * @return  state of the object prior to modification
      */
     public void update(K id, Update<P> update, Instant updateAt) {
         update(id, update, updateAt, null);
@@ -84,7 +83,6 @@ public abstract class AbstractDao<M,P,K,I> implements Dao<M,P,K> {
      * @param id    id of the object to update
      * @param update    update data
      * @param updateBy    user id of the user who performed the update
-     * @return  state of the object prior to modification
      */
     public void update(K id, Update<P> update, I updateBy) {
         update(id, update, Instant.now(), updateBy);
@@ -96,7 +94,6 @@ public abstract class AbstractDao<M,P,K,I> implements Dao<M,P,K> {
      * @param update    update data
      * @param updateAt    timestamp of the update
      * @param updateBy    user id of the user who performed the update
-     * @return  state of the object prior to modification
      */
     public abstract void update(K id, Update<P> update, Instant updateAt, I updateBy);
 
