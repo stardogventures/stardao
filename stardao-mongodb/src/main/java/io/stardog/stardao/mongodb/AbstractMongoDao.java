@@ -93,6 +93,22 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     }
 
     /**
+     * Load a partial object that might not exist by id.
+     * @param id    primary key value
+     * @param fields    set of fields to return
+     * @return
+     */
+    public Optional<P> loadOpt(K id, Iterable<String> fields) {
+        Document query = new Document(ID_FIELD, id);
+        Document project = new Document();
+        for (String field : fields) {
+            project.append(field, 1);
+        }
+        Document doc = collection.find(query).projection(project).limit(1).first();
+        return Optional.ofNullable(partialMapper.toObject(doc));
+    }
+
+    /**
      * Load a single object by an arbitrary MongoDB query. Will return the first match of the query.
      * @param query MongoDB query
      * @return  model object
@@ -152,20 +168,62 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
 
     /**
      * Given a query and a sort, return all documents that match the query in sorted order.
-     * @param query query
-     * @param sort  sort order
-     * @return  results
+     * @param query MongoDB query
+     * @param sort  MongoDB sort order
+     * @return  results of model objects
      */
     protected Results<M,K> findByQuery(Bson query, Bson sort) {
+        return Results.of(iterateByQuery(query, sort));
+    }
+
+    /**
+     * Given a query and a sort, iterate through all documents that match the query in sorted order.
+     * @param query MongoDB query
+     * @param sort  MongoDB sort order
+     * @return  iterable of model objects
+     */
+    protected Iterable<M> iterateByQuery(Bson query, Bson sort) {
         FindIterable<Document> iterable = getCollection().find(query);
         if (sort != null) {
             iterable = iterable.sort(sort);
         }
-        List<M> result = new ArrayList<>();
-        for (Document doc : iterable) {
-            result.add(getModelMapper().toObject(doc));
+        return iterable.map(doc -> getModelMapper().toObject(doc));
+    }
+
+    /**
+     * Given a query, a sort, and a projection of fields to return, return all documents as partials
+     * that match the query in sorted order
+     * @param query MongoDB query
+     * @param sort  MongoDB sort order
+     * @param projection    MongoDB projection
+     * @return  results of partial objects
+     */
+    protected Results<P,K> findByQuery(Bson query, Bson sort, Bson projection) {
+        return Results.of(iterateByQuery(query, sort, projection));
+    }
+
+    /**
+     * Given a query, a sort, and a projection of fields to return, iterate through all documents as partials
+     * that match the query in sorted order
+     * @param query MongoDB query
+     * @param sort  MongoDB sort order
+     * @param projection    MongoDB projection
+     * @return  iterable of partial objects
+     */
+    protected Iterable<P> iterateByQuery(Bson query, Bson sort, Bson projection) {
+        FindIterable<Document> iterable = getCollection().find(query);
+        if (sort != null) {
+            iterable = iterable.sort(sort);
         }
-        return Results.of(result);
+        if (projection != null) {
+            iterable = iterable.projection(projection);
+        }
+        return iterable.map(doc -> getPartialMapper().toObject(doc));
+    }
+
+    @Override
+    public Iterable<M> iterateAll() {
+        return collection.find().map((d) -> modelMapper.toObject(d));
     }
 
     /**
@@ -356,11 +414,6 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public void delete(K id) {
         Document query = new Document(ID_FIELD, id);
         collection.deleteOne(query);
-    }
-
-    @Override
-    public Iterable<M> iterateAll() {
-        return collection.find().map((d) -> modelMapper.toObject(d));
     }
 
     @Override

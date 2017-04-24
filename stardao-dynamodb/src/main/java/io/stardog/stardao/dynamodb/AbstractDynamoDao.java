@@ -149,6 +149,30 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         return Optional.ofNullable(modelMapper.toObject(item));
     }
 
+    public Optional<P> loadOpt(K id, Iterable<String> fields) {
+        NameMap nameMap = new NameMap();
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String field : fields) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(',');
+            }
+            sb.append('#');
+            sb.append(field);
+            nameMap.put("#"+field, field);
+        }
+        String projectionExpression = sb.toString();
+
+        GetItemSpec spec = new GetItemSpec()
+                .withPrimaryKey(toPrimaryKey(id))
+                .withProjectionExpression(projectionExpression)
+                .withNameMap(nameMap);
+        Item item = table.getItem(spec);
+        return Optional.ofNullable(partialMapper.toObject(item));
+    }
+
     /**
      * Load an object by a secondary index key / value. Intended to be called by wrapper methods in the subclass.
      * @param indexName name of the index to search
