@@ -151,19 +151,12 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
 
     public Optional<P> loadOpt(K id, Iterable<String> fields) {
         NameMap nameMap = new NameMap();
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
+        StringJoiner sj = new StringJoiner(",");
         for (String field : fields) {
-            if (first) {
-                first = false;
-            } else {
-                sb.append(',');
-            }
-            sb.append('#');
-            sb.append(field);
+            sj.add("#"+field);
             nameMap.put("#"+field, field);
         }
-        String projectionExpression = sb.toString();
+        String projectionExpression = sj.toString();
 
         GetItemSpec spec = new GetItemSpec()
                 .withPrimaryKey(toPrimaryKey(id))
