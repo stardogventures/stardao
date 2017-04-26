@@ -101,8 +101,14 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public Optional<P> loadOpt(K id, Iterable<String> fields) {
         Document query = new Document(ID_FIELD, id);
         Document project = new Document();
-        for (String field : fields) {
-            project.append(field, 1);
+        FieldData fieldData = getFieldData();
+        for (String fieldName : fields) {
+            Field internalField = fieldData.getMap().get(fieldName);
+            if (internalField == null) {
+                throw new IllegalArgumentException("Unknown field: " + fieldName);
+            }
+            String storageName = internalField.getStorageName();
+            project.append(storageName, 1);
         }
         Document doc = collection.find(query).projection(project).limit(1).first();
         return Optional.ofNullable(partialMapper.toObject(doc));
