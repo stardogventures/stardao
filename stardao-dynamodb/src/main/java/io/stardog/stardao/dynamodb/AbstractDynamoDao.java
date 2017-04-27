@@ -34,6 +34,7 @@ import io.stardog.stardao.core.AbstractDao;
 import io.stardog.stardao.core.Results;
 import io.stardog.stardao.core.Update;
 import io.stardog.stardao.core.field.Field;
+import io.stardog.stardao.core.field.FieldData;
 import io.stardog.stardao.dynamodb.mapper.ItemMapper;
 import io.stardog.stardao.dynamodb.mapper.JacksonItemMapper;
 import io.stardog.stardao.exceptions.DataNotFoundException;
@@ -147,6 +148,29 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                 .withPrimaryKey(toPrimaryKey(id));
         Item item = table.getItem(spec);
         return Optional.ofNullable(modelMapper.toObject(item));
+    }
+
+    public Optional<P> loadOpt(K id, Iterable<String> fields) {
+        FieldData fieldData = getFieldData();
+        NameMap nameMap = new NameMap();
+        StringJoiner sj = new StringJoiner(",");
+        for (String fieldName : fields) {
+            Field field = fieldData.getMap().get(fieldName);
+            if (field == null) {
+                throw new IllegalArgumentException("Unknown field: " + fieldName);
+            }
+            String storageName = field.getStorageName();
+            sj.add("#"+storageName);
+            nameMap.put("#"+storageName, storageName);
+        }
+        String projectionExpression = sj.toString();
+
+        GetItemSpec spec = new GetItemSpec()
+                .withPrimaryKey(toPrimaryKey(id))
+                .withProjectionExpression(projectionExpression)
+                .withNameMap(nameMap);
+        Item item = table.getItem(spec);
+        return Optional.ofNullable(partialMapper.toObject(item));
     }
 
     /**

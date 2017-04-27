@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Iterator;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
@@ -56,6 +57,20 @@ public class AbstractMongoDaoTest {
 
         TestUser load = dao.loadOpt(created.getId()).get();
         assertEquals(load, created);
+    }
+
+    @Test
+    public void testCreateAndLoadOptPartial() throws Exception {
+        TestUser created = dao.create(TestUser.builder()
+                .name("Ian")
+                .email("ian@example.com")
+                .active(true)
+                .build());
+
+        TestUser load = dao.loadOpt(created.getId(), ImmutableSet.of("name", "active")).get();
+        assertEquals("Ian", load.getName());
+        assertNull(load.getEmail());
+        assertTrue(load.getActive());
     }
 
     @Test
@@ -101,6 +116,19 @@ public class AbstractMongoDaoTest {
         assertEquals(2, results.getData().size());
         assertEquals(created2, results.getData().get(0));
         assertEquals(created1, results.getData().get(1));
+    }
+
+    @Test
+    public void testFindByQueryPartial() throws Exception {
+        TestUser created1 = dao.create(TestUser.builder().name("Ian").email("ian1@example.com").build());
+        TestUser created2 = dao.create(TestUser.builder().name("Ian").email("ian2@example.com").build());
+
+        Results<TestUser,ObjectId> results = dao.findByQuery(new Document("name", "Ian"), new Document("email", -1), new Document("name", 1));
+        assertEquals(2, results.getData().size());
+        assertEquals("Ian", results.getData().get(0).getName());
+        assertEquals("Ian", results.getData().get(1).getName());
+        assertNull(results.getData().get(0).getEmail());
+        assertNull(results.getData().get(1).getEmail());
     }
 
     @Test
@@ -165,6 +193,21 @@ public class AbstractMongoDaoTest {
         Results<TestUser,String> nomatch = dao.findWithRangedPagination(dao.getCollection().find(query).sort(sort), "name", String.class, 50);
         assertEquals(0, nomatch.getData().size());
         assertFalse(nomatch.getNext().isPresent());
+    }
+
+    @Test
+    public void testIterateByQuery() {
+        dao.create(TestUser.builder().name("Bob 01").active(true).build());
+        dao.create(TestUser.builder().name("Bob 02").active(true).build());
+
+        Iterable<TestUser> iterable = dao.iterateByQuery(new Document("active", true), new Document("name", 1));
+        Iterator<TestUser> iterator = iterable.iterator();
+        TestUser user1 = iterator.next();
+        TestUser user2 = iterator.next();
+        assertFalse(iterator.hasNext());
+
+        assertEquals("Bob 01", user1.getName());
+        assertEquals("Bob 02", user2.getName());
     }
 
     @Test

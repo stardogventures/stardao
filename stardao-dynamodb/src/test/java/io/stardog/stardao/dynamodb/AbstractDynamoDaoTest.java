@@ -135,6 +135,20 @@ public class AbstractDynamoDaoTest {
     }
 
     @Test
+    public void testCreateLoadOptPartial() throws Exception {
+        UUID creatorId = UUID.randomUUID();
+        TestModel created = dao.create(TestModel.builder()
+                .name("Ian White")
+                .country("US")
+                .birthday(LocalDate.of(1980, 5, 12))
+                .build(), creatorId);
+        TestModel loaded = dao.loadOpt(created.getId(), ImmutableSet.of("name", "country")).get();
+        assertEquals("Ian White", loaded.getName());
+        assertEquals("US", loaded.getCountry());
+        assertNull(loaded.getBirthday());
+    }
+
+    @Test
     public void testLoadByIndex() throws Exception {
         TestModel created = dao.create(TestModel.builder()
                 .name("Ian White")

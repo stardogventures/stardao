@@ -20,6 +20,11 @@ public class TestDao extends AbstractDao<TestModel,TestModel,UUID,UUID> {
     }
 
     @Override
+    public Optional<TestModel> loadOpt(UUID id, Iterable<String> fields) {
+        return null;
+    }
+
+    @Override
     public TestModel create(TestModel model, Instant createAt, UUID createBy) {
         return null;
     }

@@ -5,6 +5,7 @@ import io.stardog.stardao.core.field.FieldScanner;
 import io.stardog.stardao.exceptions.DataNotFoundException;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public abstract class AbstractDao<M,P,K,I> implements Dao<M,P,K> {
     private final Class<M> modelClass;
@@ -44,6 +45,13 @@ public abstract class AbstractDao<M,P,K,I> implements Dao<M,P,K> {
         return loadOpt(id)
                 .orElseThrow(() -> new DataNotFoundException(getDisplayModelName() + " not found: " + id));
     }
+
+    public P load(K id, Iterable<String> fields) {
+        return loadOpt(id, fields)
+                .orElseThrow(() -> new DataNotFoundException(getDisplayModelName() + " not found: " + id));
+    }
+
+    public abstract Optional<P> loadOpt(K id, Iterable<String> fields);
 
     public M create(P partial) {
         return create(partial, Instant.now(), null);
