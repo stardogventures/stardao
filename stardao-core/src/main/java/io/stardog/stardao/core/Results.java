@@ -2,6 +2,7 @@ package io.stardog.stardao.core;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +15,10 @@ import java.util.Optional;
  */
 @AutoValue
 public abstract class Results<M,N> {
+    @ApiModelProperty(value = "list of results returned", required = true)
     public abstract List<M> getData();
+
+    @ApiModelProperty(value = "identifier to return the next item in the sequence")
     public abstract Optional<N> getNext();
 
     public static <M,N> Results<M,N> of(Iterable<M> data) {
