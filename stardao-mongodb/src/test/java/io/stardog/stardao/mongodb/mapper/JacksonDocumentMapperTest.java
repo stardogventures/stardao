@@ -133,4 +133,19 @@ public class JacksonDocumentMapperTest {
         Document convert = mapper.toDocument(user);
         assertEquals(bsonNumber, convert.get("balance"));
     }
+
+    @Test
+    public void testMapUUID() throws Exception {
+        UUID uuid = UUID.randomUUID();
+
+        Document doc = new Document("uuid", uuid);
+        TestUser user = mapper.toObject(doc);
+        assertEquals(uuid, user.getUuid());
+
+        Document convert = mapper.toDocument(user);
+        assertEquals(uuid, convert.get("uuid"));
+
+        TestUser convertUser = mapper.toObject(convert);
+        assertEquals(uuid, convertUser.getUuid());
+    }
 }
