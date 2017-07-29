@@ -53,7 +53,7 @@ public class AbstractDynamoDaoTest {
     @Before
     public void setUp() throws Exception {
         System.setProperty("sqlite4java.library.path", getNativeLibsPath());
-        dynamodb = DynamoDBEmbedded.create();
+        dynamodb = DynamoDBEmbedded.create().amazonDynamoDB();
         dao = new TestDynamoDao(dynamodb);
         dao.dropAndInitTable();
     }

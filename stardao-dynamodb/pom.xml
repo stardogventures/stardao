@@ -5,7 +5,7 @@
     <parent>
         <artifactId>stardao</artifactId>
         <groupId>io.stardog.stardao</groupId>
-        <version>0.3.1</version>
+        <version>0.3.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,12 +34,12 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-dynamodb</artifactId>
-            <version>1.11.80</version>
+            <version>1.11.170</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>DynamoDBLocal</artifactId>
-            <version>1.10.5.1</version>
+            <version>1.11.86</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
