@@ -1,5 +1,6 @@
 package io.stardog.stardao.mongodb;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mongodb.client.FindIterable;
@@ -32,6 +33,13 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         this.collection = collection;
         this.modelMapper = new JacksonDocumentMapper<>(modelClass, getFieldData());
         this.partialMapper = new JacksonDocumentMapper<>(partialClass, getFieldData());
+    }
+
+    public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection, ObjectMapper objectMapper, ObjectMapper extendedJsonMapper) {
+        super(modelClass, partialClass);
+        this.collection = collection;
+        this.modelMapper = new JacksonDocumentMapper<>(modelClass, getFieldData(), objectMapper, extendedJsonMapper);
+        this.partialMapper = new JacksonDocumentMapper<>(partialClass, getFieldData(), objectMapper, extendedJsonMapper);
     }
 
     public AbstractMongoDao(Class<M> modelClass, Class<P> partialClass, MongoCollection<Document> collection,
