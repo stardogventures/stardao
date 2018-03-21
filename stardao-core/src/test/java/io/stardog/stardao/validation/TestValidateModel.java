@@ -8,7 +8,7 @@ import io.stardog.stardao.annotations.Creatable;
 import io.stardog.stardao.annotations.CreatedAt;
 import io.stardog.stardao.annotations.Id;
 import io.stardog.stardao.annotations.Updatable;
-import org.hibernate.validator.constraints.Email;
+import javax.validation.constraints.Email;
 
 import javax.annotation.Nullable;
 import java.time.Instant;

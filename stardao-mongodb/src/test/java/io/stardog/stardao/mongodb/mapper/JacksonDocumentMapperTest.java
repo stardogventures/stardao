@@ -103,7 +103,7 @@ public class JacksonDocumentMapperTest {
 
         Document doc = new Document("loginAt", date);
         TestUser user = mapper.toObject(doc);
-        assertEquals(at, user.getLoginAt());
+        assertEquals(at.toEpochMilli(), user.getLoginAt().toEpochMilli());
 
         Document convert = mapper.toDocument(user);
         assertEquals(date, convert.get("loginAt"));

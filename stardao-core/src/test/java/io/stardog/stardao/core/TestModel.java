@@ -12,8 +12,8 @@ import io.stardog.stardao.annotations.Required;
 import io.stardog.stardao.annotations.Updatable;
 import io.stardog.stardao.annotations.UpdatedAt;
 import io.stardog.stardao.annotations.UpdatedBy;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotEmpty;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Pattern;

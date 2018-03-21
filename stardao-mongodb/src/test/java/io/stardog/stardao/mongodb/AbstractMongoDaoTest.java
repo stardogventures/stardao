@@ -227,7 +227,7 @@ public class AbstractMongoDaoTest {
         assertNotNull(created.getId());
         assertEquals("Ian", created.getName());
         assertEquals(creatorId, created.getCreateId());
-        assertEquals(now, created.getCreateAt());
+        assertEquals(now.toEpochMilli(), created.getCreateAt().toEpochMilli());
     }
 
     @Test
@@ -238,7 +238,7 @@ public class AbstractMongoDaoTest {
         assertNotNull(created.getId());
         assertEquals("Ian", created.getName());
         assertEquals(creatorId, created.getCreateId());
-        assertEquals(now, created.getCreateAt());
+        assertEquals(now.toEpochMilli(), created.getCreateAt().toEpochMilli());
     }
 
     @Test
@@ -257,7 +257,7 @@ public class AbstractMongoDaoTest {
         TestUser load = dao.load(created.getId());
         assertEquals("Bob", load.getName());
         assertEquals(updateBy, load.getUpdateId());
-        assertEquals(now, load.getUpdateAt());
+        assertEquals(now.toEpochMilli(), load.getUpdateAt().toEpochMilli());
         assertNull(load.getEmail());
     }
 
@@ -278,7 +278,7 @@ public class AbstractMongoDaoTest {
         TestUser load = dao.load(created.getId());
         assertEquals("Bob", load.getName());
         assertEquals(updateBy, load.getUpdateId());
-        assertEquals(now, load.getUpdateAt());
+        assertEquals(now.toEpochMilli(), load.getUpdateAt().toEpochMilli());
     }
 
     @Test

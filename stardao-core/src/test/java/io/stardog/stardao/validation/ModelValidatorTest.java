@@ -41,7 +41,7 @@ public class ModelValidatorTest {
         TestValidateModel model = TestValidateModel.builder().email("invalid").build();
         errors = validator.getModelValidationErrors(model, Default.class);
         assertEquals(1, errors.size());
-        assertEquals("not a well-formed email address", errors.get(0).getMessage());
+        assertEquals("must be a well-formed email address", errors.get(0).getMessage());
 
         model = TestValidateModel.builder().email("example@example.com").build();
         errors = validator.getModelValidationErrors(model, Default.class);
@@ -63,7 +63,7 @@ public class ModelValidatorTest {
         errors = validator.getCreateValidationErrors(model, fieldData);
         assertEquals(2, errors.size());
         assertEquals("is required", errors.get(0).getMessage());
-        assertEquals("not a well-formed email address", errors.get(1).getMessage());
+        assertEquals("must be a well-formed email address", errors.get(1).getMessage());
 
         model = TestValidateModel.builder().email("example@example.com").type("type").loginAt(Instant.now()).build();
         errors = validator.getCreateValidationErrors(model, fieldData);
@@ -80,7 +80,7 @@ public class ModelValidatorTest {
         Update<TestValidateModel> update = JsonHelper.update("{email:'bad'}", TestValidateModel.class);
         errors = validator.getUpdateValidationErrors(update, fieldData);
         assertEquals(1, errors.size());
-        assertEquals("not a well-formed email address", errors.get(0).getMessage());
+        assertEquals("must be a well-formed email address", errors.get(0).getMessage());
 
         // attempt to modify a non-Updatable field
         update = JsonHelper.update("{type:'change'}", TestValidateModel.class);

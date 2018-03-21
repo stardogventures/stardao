@@ -16,6 +16,7 @@ public class DataNotFoundExceptionMapperTest {
         Response response = mapper.toResponse(new DataNotFoundException("not found"));
         assertEquals(404, response.getStatus());
         assertEquals("application/json", response.getMediaType().toString());
+        @SuppressWarnings("unchecked")
         Map<String,Object> map = (Map<String,Object>)response.getEntity();
         assertEquals(404, map.get("code"));
         assertEquals("not found", map.get("message"));

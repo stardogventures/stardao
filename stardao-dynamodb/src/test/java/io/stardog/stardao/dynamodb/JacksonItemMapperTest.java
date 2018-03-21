@@ -34,7 +34,7 @@ public class JacksonItemMapperTest {
         JacksonItemMapper<TestObject> mapper = new JacksonItemMapper<>(TestObject.class, FieldData.builder().map(ImmutableMap.of()).build());
 
         TestObject test = mapper.getObjectMapper().readValue("{\"at\":1479334772334}", TestObject.class);
-        assertEquals("2016-11-16T22:19:32.334Z", test.getAt().toString());
+        assertEquals(Instant.parse("2016-11-16T22:19:32.334Z").toEpochMilli(), test.getAt().toEpochMilli());
 
         UUID id = UUID.randomUUID();
         Instant at = Instant.now();
@@ -44,7 +44,7 @@ public class JacksonItemMapperTest {
         TestObject object2 = mapper.toObject(item);
 
         assertEquals(id, object2.getId());
-        assertEquals(at, object2.getAt());
+        assertEquals(at.toEpochMilli(), object2.getAt().toEpochMilli());
         assertEquals(date, object2.getDate());
         assertEquals("MyName", object2.getName());
         assertEquals(new Integer(372), object2.getNum());

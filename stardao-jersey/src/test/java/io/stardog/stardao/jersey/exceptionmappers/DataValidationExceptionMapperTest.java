@@ -13,6 +13,7 @@ import static org.junit.Assert.*;
 
 public class DataValidationExceptionMapperTest {
     @Test
+    @SuppressWarnings("unchecked")
     public void toResponse() throws Exception {
         DataValidationExceptionMapper mapper = new DataValidationExceptionMapper();
         DataValidationException exception = new DataValidationException(Arrays.asList(ValidationError.of("field", "is invalid")));

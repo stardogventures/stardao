@@ -12,6 +12,7 @@ import io.stardog.stardao.exceptions.DataValidationException;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,9 +31,16 @@ public class ModelValidator {
             return ImmutableList.of(ValidationError.of("", "object is null"));
         }
         Set<ConstraintViolation<Object>> violations = validator.validate(object, validationGroup);
-        return violations.stream()
-               .map((v) -> ValidationError.of(v.getPropertyPath().toString(), v.getMessage()))
-               .collect(ImmutableList.toImmutableList());
+        Set<String> errorFields = new HashSet<>();
+        ImmutableList.Builder<ValidationError> errors = ImmutableList.builder();
+        for (ConstraintViolation<Object> v : violations) {
+            String field = v.getPropertyPath().toString();
+            if (!errorFields.contains(field)) {
+                errors.add(ValidationError.of(field, v.getMessage()));
+                errorFields.add(field);
+            }
+        }
+        return errors.build();
     }
 
     /**
@@ -67,10 +75,12 @@ public class ModelValidator {
             }
         }
         Set<ConstraintViolation<Object>> violations = validator.validate(create, Default.class);
+        Set<String> errorFields = new HashSet<>();
         for (ConstraintViolation<?> cv : violations) {
             String field = cv.getPropertyPath().toString();
-            if (createFields.contains(field)) {
+            if (createFields.contains(field) && !errorFields.contains(field)) {
                 errors.add(ValidationError.of(field, cv.getMessage()));
+                errorFields.add(field);
             }
         }
         return errors.build();
@@ -106,10 +116,12 @@ public class ModelValidator {
 
         // validate the model -- but ignore fields that aren't being touched
         Set<ConstraintViolation<Object>> violations = validator.validate(update.getPartial(), Default.class);
+        Set<String> errorFields = new HashSet<>();
         for (ConstraintViolation<?> cv : violations) {
             String field = cv.getPropertyPath().toString();
-            if (updateFields.contains(field)) {
+            if (updateFields.contains(field) && !errorFields.contains(field)) {
                 errors.add(ValidationError.of(field, cv.getMessage()));
+                errorFields.add(field);
             }
         }
 
