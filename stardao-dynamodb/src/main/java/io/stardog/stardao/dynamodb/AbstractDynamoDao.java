@@ -29,6 +29,7 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.stardog.stardao.core.AbstractDao;
 import io.stardog.stardao.core.Results;
@@ -146,7 +147,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public Optional<M> loadOpt(K id) {
         GetItemSpec spec = new GetItemSpec()
                 .withPrimaryKey(toPrimaryKey(id));
-        Item item = table.getItem(spec);
+        Item item = getTable().getItem(spec);
         return Optional.ofNullable(modelMapper.toObject(item));
     }
 
@@ -169,7 +170,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                 .withPrimaryKey(toPrimaryKey(id))
                 .withProjectionExpression(projectionExpression)
                 .withNameMap(nameMap);
-        Item item = table.getItem(spec);
+        Item item = getTable().getItem(spec);
         return Optional.ofNullable(partialMapper.toObject(item));
     }
 
@@ -198,7 +199,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                 .withNameMap(new NameMap().with("#key", key))
                 .withValueMap(new ValueMap().with(":value", value));
 
-        Index index = table.getIndex(indexName);
+        Index index = getTable().getIndex(indexName);
         ItemCollection<QueryOutcome> items = index.query(spec);
         for (Item i : items) {
             return Optional.of(modelMapper.toObject(i));
@@ -212,7 +213,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      */
     @Override
     public Iterable<M> iterateAll() {
-        return () -> new DynamoIterator<>(table.scan().iterator(), modelMapper);
+        return () -> new DynamoIterator<>(getTable().scan().iterator(), modelMapper);
     }
 
     /**
@@ -230,7 +231,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      */
     protected Results<M,K> scan(ScanSpec spec) {
         List<M> results = new ArrayList<>();
-        for (Item item : table.scan(spec)) {
+        for (Item item : getTable().scan(spec)) {
             results.add(modelMapper.toObject(item));
         }
         return Results.of(results);
@@ -243,7 +244,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * @return  results object containing the results of the query
      */
     protected Results<M,K> findByIndex(String indexName, QuerySpec spec) {
-        Index index = table.getIndex(indexName);
+        Index index = getTable().getIndex(indexName);
         List<M> results = new ArrayList<>();
         for (Item item : index.query(spec)) {
             results.add(modelMapper.toObject(item));
@@ -260,7 +261,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * @return  true if the field value is unique, false if it is not unique
      */
     protected boolean checkUniqueField(String indexName, String field, Object value, K excludeId) {
-        Index index = table.getIndex(indexName);
+        Index index = getTable().getIndex(indexName);
         QuerySpec spec = new QuerySpec()
                 .withKeyConditionExpression("#field = :value")
                 .withNameMap(new NameMap()
@@ -298,7 +299,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                     );
         }
         M model = modelMapper.toObject(item);
-        table.putItem(spec);
+        getTable().putItem(spec);
         return model;
     }
 
@@ -349,7 +350,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      */
     public void update(K id, Update<P> update, Instant updateAt, I updaterId) {
         UpdateItemSpec spec = toUpdateItemSpec(id, update, updateAt, updaterId);
-        table.updateItem(spec);
+        getTable().updateItem(spec);
     }
 
     /**
@@ -361,7 +362,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public M updateAndReturn(K id, Update<P> update, Instant updateAt, I updaterId) {
         UpdateItemSpec spec = toUpdateItemSpec(id, update, updateAt, updaterId);
         spec = spec.withReturnValues(ReturnValue.ALL_OLD);
-        UpdateItemOutcome outcome = table.updateItem(spec);
+        UpdateItemOutcome outcome = getTable().updateItem(spec);
         Item item = outcome.getItem();
         if (item == null) {
             item = new Item();
@@ -456,7 +457,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public void delete(K id) {
         DeleteItemSpec spec = new DeleteItemSpec();
         spec.withPrimaryKey(toPrimaryKey(id));
-        table.deleteItem(spec);
+        getTable().deleteItem(spec);
     }
 
     /**
@@ -494,7 +495,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
         }
         TableUtils.createTableIfNotExists(db, request);
         try {
-            table.waitForActive();
+            getTable().waitForActive();
         } catch (InterruptedException e) {
             LOGGER.warn("InterruptedException while waiting for table to become active: " + getTableName(), e);
         }
@@ -509,7 +510,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                 .withTableName(getTableName());
         TableUtils.deleteTableIfExists(db, request);
         try {
-            table.waitForDelete();
+            getTable().waitForDelete();
         } catch (InterruptedException e) {
             LOGGER.warn("InterruptedException while waiting for table delete: " + getTableName(), e);
         }
@@ -522,7 +523,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      */
     public void copyTable(AmazonDynamoDB sourceDb, String sourceTable) {
         for (Item item : new DynamoDB(sourceDb).getTable(sourceTable).scan()) {
-            table.putItem(item);
+            getTable().putItem(item);
         }
     }
 
@@ -530,7 +531,7 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * Ensure that the state of the global secondary indexes matches that of the Dao definition.
      */
     public void ensureIndexes() {
-        TableDescription desc = table.describe();
+        TableDescription desc = getTable().describe();
         List<AttributeDefinition> actualAttribs = desc.getAttributeDefinitions();
         List<GlobalSecondaryIndexDescription> actualIndexes = desc.getGlobalSecondaryIndexes();
 
@@ -547,9 +548,9 @@ public abstract class AbstractDynamoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
                 AttributeDefinition attrRange = getAttribute(desiredAttribs, index.getKeySchema(), KeyType.RANGE);
                 Index created;
                 if (attrRange == null) {
-                    created = table.createGSI(create, attrHash);
+                    created = getTable().createGSI(create, attrHash);
                 } else {
-                    created = table.createGSI(create, attrHash, attrRange);
+                    created = getTable().createGSI(create, attrHash, attrRange);
                 }
                 try {
                     created.waitForActive();

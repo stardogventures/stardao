@@ -73,7 +73,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     }
 
     public String getCollectionName() {
-        return collection.getNamespace().getCollectionName();
+        return getCollection().getNamespace().getCollectionName();
     }
 
     public DocumentMapper<M> getModelMapper() {
@@ -96,7 +96,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     @Override
     public Optional<M> loadOpt(K id) {
         Document query = new Document(ID_FIELD, id);
-        Document doc = collection.find(query).limit(1).first();
+        Document doc = getCollection().find(query).limit(1).first();
         return Optional.ofNullable(modelMapper.toObject(doc));
     }
 
@@ -118,7 +118,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
             String storageName = internalField.getStorageName();
             project.append(storageName, 1);
         }
-        Document doc = collection.find(query).projection(project).limit(1).first();
+        Document doc = getCollection().find(query).projection(project).limit(1).first();
         return Optional.ofNullable(partialMapper.toObject(doc));
     }
 
@@ -140,7 +140,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * @throws DataNotFoundException    if there is no object matching the query
      */
     protected M loadByQuery(Bson query, Bson sort) {
-        FindIterable<Document> find = collection.find(query);
+        FindIterable<Document> find = getCollection().find(query);
         if (sort != null) {
             find.sort(sort);
         }
@@ -169,7 +169,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
      * @return  Optional containing the found object
      */
     protected Optional<M> loadByQueryOpt(Bson query, Bson sort) {
-        FindIterable<Document> find = collection.find(query);
+        FindIterable<Document> find = getCollection().find(query);
         if (sort != null) {
             find.sort(sort);
         }
@@ -237,7 +237,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
 
     @Override
     public Iterable<M> iterateAll() {
-        return collection.find().map((d) -> modelMapper.toObject(d));
+        return getCollection().find().map((d) -> modelMapper.toObject(d));
     }
 
     /**
@@ -372,7 +372,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
             doc.put(fieldData.getUpdatedBy().getStorageName(), createBy);
         }
         M model = modelMapper.toObject(doc);
-        collection.insertOne(doc);
+        getCollection().insertOne(doc);
         return model;
     }
 
@@ -380,7 +380,7 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     public void update(K id, Update<P> update, Instant updateAt, I updateBy) {
         Document query = new Document(ID_FIELD, id);
         Document upDoc = toUpdateDocument(update, updateAt, updateBy);
-        collection.updateOne(query, upDoc);
+        getCollection().updateOne(query, upDoc);
     }
 
     @Override
@@ -427,19 +427,19 @@ public abstract class AbstractMongoDao<M,P,K,I> extends AbstractDao<M,P,K,I> {
     @Override
     public void delete(K id) {
         Document query = new Document(ID_FIELD, id);
-        collection.deleteOne(query);
+        getCollection().deleteOne(query);
     }
 
     @Override
     public void initTable() {
         for (IndexModel index : getIndexes()) {
-            collection.createIndex(index.getKeys(), index.getOptions());
+            getCollection().createIndex(index.getKeys(), index.getOptions());
         }
     }
 
     @Override
     public void dropTable() {
-        collection.drop();
+        getCollection().drop();
     }
 
     public List<IndexModel> getIndexes() {
