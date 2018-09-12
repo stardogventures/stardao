@@ -9,7 +9,6 @@ import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
 import kotlin.reflect.jvm.internal.impl.name.FqName
 import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -40,20 +39,14 @@ class DataPartialProcessor: AbstractProcessor() {
         val typeBuilder = TypeSpec.classBuilder(className)
                 .addModifiers(KModifier.DATA)
 
-        processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "Generating class $className...")
-
         type.enclosedElements.forEach {
             val propertyName = it.simpleName.toString()
             val annotations = it.annotationMirrors
                     .map { m -> AnnotationSpec.get(m) }
                     .filter { m -> !m.type.toString().endsWith(".NotNull") }
 
-            processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "Annotation mirrors: " + it.annotationMirrors.size + " " + it.annotationMirrors)
-
             if (it.kind == ElementKind.FIELD) {
                 val propertyType = it.asType().asTypeName().javaToKotlinType().asNullable()
-                annotations.forEach { processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "Annotation: $it") }
-
                 conBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
                         .defaultValue("null")
                         .addAnnotations(annotations)
