@@ -5,7 +5,7 @@
     <parent>
         <artifactId>stardao</artifactId>
         <groupId>io.stardog.stardao</groupId>
-        <version>0.3.3-SNAPSHOT</version>
+        <version>0.3.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -68,6 +68,11 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>1.5.18</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>1.2.61</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
