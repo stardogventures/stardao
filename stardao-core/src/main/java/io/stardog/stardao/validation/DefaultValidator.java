@@ -1,5 +1,6 @@
 package io.stardog.stardao.validation;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.stardog.stardao.core.AbstractDao;
@@ -10,7 +11,9 @@ import javax.validation.Validation;
 public class DefaultValidator {
     private static final ModelValidator VALIDATOR = new ModelValidator(Validation.buildDefaultValidatorFactory().getValidator(),
             new ObjectMapper()
-                    .registerModule(new Jdk8Module()));
+                    .registerModule(new Jdk8Module())
+                    .setSerializationInclusion(JsonInclude.Include.NON_ABSENT));
+
 
     public static boolean validateModel(Object model) {
         return VALIDATOR.validateModel(model);
