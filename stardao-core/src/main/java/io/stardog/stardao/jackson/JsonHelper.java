@@ -27,12 +27,16 @@ public class JsonHelper {
      * @param <T>   type of object to create
      * @return  object
      */
-    public static <T> T object(String json, Class<T> klazz) {
+    public static <T> T obj(String json, Class<T> klazz) {
         try {
             return MAPPER.readValue(json, klazz);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static <T> T object(String json, Class<T> klazz) {
+        return obj(json, klazz);
     }
 
     /**

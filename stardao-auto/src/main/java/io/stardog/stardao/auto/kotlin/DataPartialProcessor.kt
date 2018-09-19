@@ -1,6 +1,7 @@
 package io.stardog.stardao.auto.kotlin
 
 import com.google.auto.service.AutoService
+import com.google.common.base.Joiner
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.*
 import io.stardog.stardao.auto.annotations.DataPartial
@@ -12,6 +13,8 @@ import javax.lang.model.element.TypeElement
 import kotlin.reflect.jvm.internal.impl.name.FqName
 import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import java.util.*
+import javax.tools.Diagnostic
 
 @AutoService(Processor::class)
 class DataPartialProcessor: AbstractProcessor() {
@@ -26,40 +29,48 @@ class DataPartialProcessor: AbstractProcessor() {
     override fun process(annotations: MutableSet<out TypeElement>, env: RoundEnvironment): Boolean {
 //        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Starting processing...")
         env.getElementsAnnotatedWith(DataPartial::class.java).forEach {
-            val className = "Partial" + it.simpleName.toString()
+            val className = it.simpleName.toString()
+            val partialClassName = "Partial$className"
             val pack = processingEnv.elementUtils.getPackageOf(it).toString()
-            val file = generateClass(className, pack, it as TypeElement)
-            writeFile(className, file)
+            val file = generateClass(className, partialClassName, pack, it as TypeElement)
+            writeFile(partialClassName, file)
         }
         return true
     }
 
-    fun generateClass(className: String, pack: String, type: TypeElement):FileSpec {
-        val conBuilder = FunSpec.constructorBuilder()
-        val typeBuilder = TypeSpec.classBuilder(className)
+    fun generateClass(baseClassName: String, partialClassName: String, pack: String, type: TypeElement):FileSpec {
+        val classNameLc = baseClassName.toLowerCase()
+        val typeBuilder = TypeSpec.classBuilder(partialClassName)
                 .addModifiers(KModifier.DATA)
+        val primaryConBuilder = FunSpec.constructorBuilder()
+        val dataParams = StringJoiner(", ")
 
         type.enclosedElements.forEach {
             val propertyName = it.simpleName.toString()
             val annotations = it.annotationMirrors
                     .map { m -> AnnotationSpec.get(m) }
-                    .filter { m -> !m.type.toString().endsWith(".NotNull") }
+                    .filter { m -> !m.type.toString().endsWith(".NotNull") && !m.type.toString().endsWith(".Nullable") }
 
             if (it.kind == ElementKind.FIELD) {
                 val propertyType = it.asType().asTypeName().javaToKotlinType().asNullable()
-                conBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
+                primaryConBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
                         .defaultValue("null")
                         .addAnnotations(annotations)
                         .build())
                 typeBuilder.addProperty(PropertySpec.builder(propertyName, propertyType)
                         .initializer(propertyName)
                         .build())
+                dataParams.add("$propertyName = $classNameLc.$propertyName")
             }
         }
 
-        typeBuilder.primaryConstructor(conBuilder.build())
+        typeBuilder.primaryConstructor(primaryConBuilder.build())
+        typeBuilder.addFunction(FunSpec.constructorBuilder()
+                .addParameter(ParameterSpec.builder(classNameLc, type.asType().asTypeName()).build())
+                .callThisConstructor(dataParams.toString())
+                .build())
 
-        val file = FileSpec.builder(pack, className)
+        val file = FileSpec.builder(pack, partialClassName)
                 .addType(typeBuilder.build())
                 .build()
 
