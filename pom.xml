@@ -53,6 +53,10 @@
         </repository>
     </distributionManagement>
 
+    <properties>
+        <jackson.version>2.9.7</jackson.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
