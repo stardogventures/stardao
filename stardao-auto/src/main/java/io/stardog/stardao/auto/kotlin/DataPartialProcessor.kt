@@ -1,7 +1,6 @@
 package io.stardog.stardao.auto.kotlin
 
 import com.google.auto.service.AutoService
-import com.google.common.base.Joiner
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.*
 import io.stardog.stardao.auto.annotations.DataPartial
@@ -14,7 +13,6 @@ import kotlin.reflect.jvm.internal.impl.name.FqName
 import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.util.*
-import javax.tools.Diagnostic
 
 @AutoService(Processor::class)
 class DataPartialProcessor: AbstractProcessor() {
@@ -63,7 +61,13 @@ class DataPartialProcessor: AbstractProcessor() {
                 dataParams.add("$propertyName = $classNameLc.$propertyName")
             }
         }
-
+        // copy all annotations from the base type other than @DataPartial itself and kotlin metadata
+        type.annotationMirrors.forEach {
+            if (it.annotationType.toString() != "io.stardog.stardao.auto.annotations.DataPartial"
+                    && it.annotationType.toString() != "kotlin.Metadata") {
+                typeBuilder.addAnnotation(AnnotationSpec.get(it))
+            }
+        }
         typeBuilder.primaryConstructor(primaryConBuilder.build())
         typeBuilder.addFunction(FunSpec.constructorBuilder()
                 .addParameter(ParameterSpec.builder(classNameLc, type.asType().asTypeName()).build())
