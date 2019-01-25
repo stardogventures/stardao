@@ -104,7 +104,9 @@ public class JacksonItemMapper<M> implements ItemMapper<M> {
         Item renamedItem = new Item();
         for (String key : map.keySet()) {
             String renamedKey = renames.getOrDefault(key, key);
-            renamedItem.with(renamedKey, item.get(key));
+            if (renamedKey != null && !"".equals(renamedKey)) {
+                renamedItem.with(renamedKey, item.get(key));
+            }
         }
         return renamedItem;
     }

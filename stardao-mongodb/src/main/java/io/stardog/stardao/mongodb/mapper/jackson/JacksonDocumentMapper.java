@@ -109,7 +109,9 @@ public class JacksonDocumentMapper<M> implements DocumentMapper<M> {
         Document renamedDoc = new Document();
         for (String key : doc.keySet()) {
             String renamedKey = renames.getOrDefault(key, key);
-            renamedDoc.put(renamedKey, doc.get(key));
+            if (renamedKey != null && !"".equals(renamedKey)) {
+                renamedDoc.put(renamedKey, doc.get(key));
+            }
         }
         return renamedDoc;
     }
