@@ -13,7 +13,7 @@ import java.lang.reflect.Type;
 import java.util.Iterator;
 
 /**
- * The UpdateConverter takes references to Update<PartialModel> objects and turns them into references to Model objects.
+ * The UpdateConverter takes references to Update objects and turns them into references to Model objects.
  */
 public class UpdateConverter implements ModelConverter {
     public UpdateConverter() {

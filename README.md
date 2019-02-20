@@ -26,7 +26,7 @@ To use Stardao, add the following to your project's POM file:
 
 ```
 <properties>
-    <stardao.version>0.3.0</stardao.version>
+    <stardao.version>0.3.4</stardao.version>
     ...
 </properties>
 
