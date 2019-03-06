@@ -13,6 +13,7 @@ import kotlin.reflect.jvm.internal.impl.name.FqName
 import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.util.*
+import javax.tools.Diagnostic
 
 @AutoService(Processor::class)
 class DataPartialProcessor: AbstractProcessor() {
@@ -46,7 +47,7 @@ class DataPartialProcessor: AbstractProcessor() {
         type.enclosedElements.forEach {
             val propertyName = it.simpleName.toString()
             val annotations = it.annotationMirrors
-                    .map { m -> AnnotationSpec.get(m) }
+                    .map { m -> AnnotationSpec.get(m).toBuilder().useSiteTarget(AnnotationSpec.UseSiteTarget.FIELD).build() }
                     .filter { m -> !m.type.toString().endsWith(".NotNull") && !m.type.toString().endsWith(".Nullable") }
 
             if (it.kind == ElementKind.FIELD) {

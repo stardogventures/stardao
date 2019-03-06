@@ -7,7 +7,7 @@
     <groupId>io.stardog.stardao</groupId>
     <artifactId>stardao</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.4</version>
+    <version>0.3.5-SNAPSHOT</version>
     <modules>
         <module>stardao-core</module>
         <module>stardao-mongodb</module>
