@@ -13,6 +13,7 @@ import kotlin.reflect.jvm.internal.impl.name.FqName
 import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.util.*
+import javax.lang.model.element.Element
 import javax.tools.Diagnostic
 
 @AutoService(Processor::class)
@@ -50,8 +51,8 @@ class DataPartialProcessor: AbstractProcessor() {
                     .map { m -> AnnotationSpec.get(m).toBuilder().useSiteTarget(AnnotationSpec.UseSiteTarget.FIELD).build() }
                     .filter { m -> !m.type.toString().endsWith(".NotNull") && !m.type.toString().endsWith(".Nullable") }
 
-            if (it.kind == ElementKind.FIELD) {
-                val propertyType = it.asType().asTypeName().javaToKotlinType().asNullable()
+            if (it.kind == ElementKind.FIELD && propertyName != "Companion") {
+                val propertyType = it.asType().asTypeName().javaToKotlinType(annotations).asNullable()
                 primaryConBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
                         .defaultValue("null")
                         .addAnnotations(annotations)
@@ -89,10 +90,16 @@ class DataPartialProcessor: AbstractProcessor() {
 }
 
 // asTypeName() currently returns java classes for certain classes such as String when we need the Kotlin
-// version. As a workaround use the following from https://github.com/square/kotlinpoet/issues/236#issuecomment-377784099
-fun TypeName.javaToKotlinType(): TypeName {
-    return if (this is ParameterizedTypeName) {
-        (rawType.javaToKotlinType() as ClassName).parameterizedBy(*typeArguments.map { it.javaToKotlinType() }.toTypedArray())
+// version. As a workaround use the following adapted from https://github.com/square/kotlinpoet/issues/236#issuecomment-377784099
+fun TypeName.javaToKotlinType(annotations: List<AnnotationSpec>): TypeName {
+    if (this is ParameterizedTypeName) {
+        val rawTypeClass = rawType.javaToKotlinType(annotations) as ClassName
+        val typedArgs = typeArguments.map { it.javaToKotlinType(emptyList()) }.toMutableList()
+        val hasNullableValues = annotations.filter { it.type.toString() == "io.stardog.stardao.auto.annotations.HasNullableValues" }.isNotEmpty()
+        if (hasNullableValues) {
+            typedArgs[typedArgs.size-1] = typedArgs[typedArgs.size-1].asNullable()
+        }
+        return rawTypeClass.parameterizedBy(*typedArgs.toTypedArray())
     } else {
         val className =
                 JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))
