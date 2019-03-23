@@ -10,11 +10,9 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
 import kotlin.reflect.jvm.internal.impl.name.FqName
-import kotlin.reflect.jvm.internal.impl.platform.JavaToKotlinClassMap
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.util.*
-import javax.lang.model.element.Element
-import javax.tools.Diagnostic
+import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 
 @AutoService(Processor::class)
 class DataPartialProcessor: AbstractProcessor() {
@@ -49,10 +47,10 @@ class DataPartialProcessor: AbstractProcessor() {
             val propertyName = it.simpleName.toString()
             val annotations = it.annotationMirrors
                     .map { m -> AnnotationSpec.get(m).toBuilder().useSiteTarget(AnnotationSpec.UseSiteTarget.FIELD).build() }
-                    .filter { m -> !m.type.toString().endsWith(".NotNull") && !m.type.toString().endsWith(".Nullable") }
+                    .filter { m -> !m.className.toString().endsWith(".NotNull") && !m.className.toString().endsWith(".Nullable") }
 
             if (it.kind == ElementKind.FIELD && propertyName != "Companion") {
-                val propertyType = it.asType().asTypeName().javaToKotlinType(annotations).asNullable()
+                val propertyType = it.asType().asTypeName().javaToKotlinType(annotations).copy(nullable = true)
                 primaryConBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
                         .defaultValue("null")
                         .addAnnotations(annotations)
@@ -95,9 +93,9 @@ fun TypeName.javaToKotlinType(annotations: List<AnnotationSpec>): TypeName {
     if (this is ParameterizedTypeName) {
         val rawTypeClass = rawType.javaToKotlinType(annotations) as ClassName
         val typedArgs = typeArguments.map { it.javaToKotlinType(emptyList()) }.toMutableList()
-        val hasNullableValues = annotations.filter { it.type.toString() == "io.stardog.stardao.auto.annotations.HasNullableValues" }.isNotEmpty()
+        val hasNullableValues = annotations.filter { it.className.toString() == "io.stardog.stardao.auto.annotations.HasNullableValues" }.isNotEmpty()
         if (hasNullableValues) {
-            typedArgs[typedArgs.size-1] = typedArgs[typedArgs.size-1].asNullable()
+            typedArgs[typedArgs.size-1] = typedArgs[typedArgs.size-1].copy(nullable = true)
         }
         return rawTypeClass.parameterizedBy(*typedArgs.toTypedArray())
     } else {
