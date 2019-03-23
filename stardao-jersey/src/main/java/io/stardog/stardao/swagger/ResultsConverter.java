@@ -20,7 +20,14 @@ import java.util.Iterator;
  * contain Partial in the name.
  */
 public class ResultsConverter implements ModelConverter {
+    private String prefix;
+
     public ResultsConverter() {
+        this("Partial");
+    }
+
+    public ResultsConverter(String prefix) {
+        this.prefix = prefix;
     }
 
     public Property resolveProperty(Type type, ModelConverterContext context, Annotation[] annotations, Iterator<ModelConverter> chain) {
@@ -33,8 +40,8 @@ public class ResultsConverter implements ModelConverter {
             Class<?> cls = jType.getRawClass();
             if (cls.getName().equals("io.stardog.stardao.core.Results") && jType.containedTypeCount() == 2) {
                 String modelType = jType.containedType(0).getRawClass().getSimpleName();
-                if (modelType.startsWith("Partial")) {
-                    modelType = modelType.substring(7);
+                if (modelType.startsWith(prefix)) {
+                    modelType = modelType.substring(prefix.length());
                 }
                 String nextType = jType.containedType(1).getRawClass().getSimpleName();
 

@@ -7,14 +7,14 @@
     <groupId>io.stardog.stardao</groupId>
     <artifactId>stardao</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.5-SNAPSHOT</version>
+    <version>0.3.6-SNAPSHOT</version>
     <modules>
         <module>stardao-core</module>
         <module>stardao-mongodb</module>
         <module>stardao-dynamodb</module>
         <module>stardao-jersey</module>
         <module>stardao-auto</module>
-        <module>stardao-kotlin-dto</module>
+        <module>stardao-kotlin-partial</module>
     </modules>
 
     <name>${project.groupId}:${project.artifactId}</name>

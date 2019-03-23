@@ -1,4 +1,4 @@
-package io.stardog.stardao.kotlin.dto.processor
+package io.stardog.stardao.kotlin.partial.processor
 
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.*
@@ -7,15 +7,15 @@ import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
 import kotlin.reflect.jvm.internal.impl.name.FqName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import io.stardog.stardao.kotlin.dto.annotations.DtoFieldRequired
-import io.stardog.stardao.kotlin.dto.annotations.DtoGenerate
+import io.stardog.stardao.kotlin.partial.annotations.PartialFieldRequired
+import io.stardog.stardao.kotlin.partial.annotations.PartialGenerate
 import java.util.*
 import javax.lang.model.element.*
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 
-class DtoGenerateProcessor: AbstractProcessor() {
+class PartialGenerateProcessor: AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
-        return mutableSetOf(DtoGenerate::class.java.name)
+        return mutableSetOf(PartialGenerate::class.java.name)
     }
 
     override fun getSupportedSourceVersion(): SourceVersion {
@@ -23,14 +23,14 @@ class DtoGenerateProcessor: AbstractProcessor() {
     }
 
     override fun process(annotations: MutableSet<out TypeElement>, env: RoundEnvironment): Boolean {
-        env.getElementsAnnotatedWith(DtoGenerate::class.java).forEach {
+        env.getElementsAnnotatedWith(PartialGenerate::class.java).forEach {
             val baseClassName = it.simpleName.toString()
             val packageName = processingEnv.elementUtils.getPackageOf(it).toString()
-            val dtoGenerateAnnotation = it.getAnnotation(DtoGenerate::class.java)
-            for (dtoType in dtoGenerateAnnotation.types) {
-                val includeToPartial = dtoType != "Partial" && dtoGenerateAnnotation.types.contains("Partial")
-                val file = generateClass(it as TypeElement, packageName, baseClassName, dtoType, includeToPartial)
-                writeFile("$dtoType$baseClassName", file)
+            val partialGenerateAnnotation = it.getAnnotation(PartialGenerate::class.java)
+            for (partialType in partialGenerateAnnotation.types) {
+                val includeToPartial = partialType != "Partial" && partialGenerateAnnotation.types.contains("Partial")
+                val file = generateClass(it as TypeElement, packageName, baseClassName, partialType, includeToPartial)
+                writeFile("$partialType$baseClassName", file)
             }
         }
         return true
@@ -44,26 +44,26 @@ class DtoGenerateProcessor: AbstractProcessor() {
         return result
     }
 
-    fun getDtoFieldAnnotationRequired(field: Element, dtoType: String): DtoFieldRequired? {
-        val dtoFieldAnnotations = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.kotlin.dto.annotations.DtoField" }
-        for (ann in dtoFieldAnnotations) {
+    fun getPartialFieldAnnotationRequired(field: Element, partialType: String): PartialFieldRequired? {
+        val partialFieldAnnotations = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.kotlin.partial.annotations.PartialField" }
+        for (ann in partialFieldAnnotations) {
             val map = toAnnotationMap(ann)
-            if (map["type()"].toString() == "\"$dtoType\"") {
-                return DtoFieldRequired.valueOf(map["required()"]!!.value.toString())
+            if (map["type()"].toString() == "\"$partialType\"") {
+                return PartialFieldRequired.valueOf(map["required()"]!!.value.toString())
             }
         }
         return null
     }
 
-    fun getFieldRequired(field: Element, dtoType: String): DtoFieldRequired {
-        // check for the @DtoField annotation
-        val explicitRequired = getDtoFieldAnnotationRequired(field, dtoType)
+    fun getFieldRequired(field: Element, partialType: String): PartialFieldRequired {
+        // check for the @PartialField annotation
+        val explicitRequired = getPartialFieldAnnotationRequired(field, partialType)
         if (explicitRequired != null) {
             return explicitRequired
         }
 
         // magical behaviors for Create and Update
-        if (dtoType == "Create") {
+        if (partialType == "Create") {
             // for the Create type, any field marked @Creatable or @Updatable is included;
             // if the field is non-nullable with no default, the field is required
             val isUpdatable = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.annotations.Updatable" }.isNotEmpty()
@@ -71,45 +71,46 @@ class DtoGenerateProcessor: AbstractProcessor() {
             val isNullable = field.annotationMirrors.filter { it.annotationType.toString().endsWith(".Nullable") }.isNotEmpty()
 
             if (!isUpdatable && !isCreatable) {
-                return DtoFieldRequired.ABSENT
+                return PartialFieldRequired.ABSENT
             }
             if (isNullable) {
-                return DtoFieldRequired.OPTIONAL
+                return PartialFieldRequired.OPTIONAL
             }
-            return DtoFieldRequired.REQUIRED
+            return PartialFieldRequired.REQUIRED
 
-        } else if (dtoType == "Update") {
+        } else if (partialType == "Update") {
             // for the Update type, any field marked @Updatable is included; all fields are always optional
             val isUpdatable = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.annotations.Updatable" }.isNotEmpty()
             if (isUpdatable) {
-                return DtoFieldRequired.OPTIONAL
+                return PartialFieldRequired.OPTIONAL
             } else {
-                return DtoFieldRequired.ABSENT
+                return PartialFieldRequired.ABSENT
             }
         } else {
             // for other types, default is OPTIONAL for all fields unless specified otherwise
-            return DtoFieldRequired.OPTIONAL
+            return PartialFieldRequired.OPTIONAL
         }
     }
 
-    fun generateClass(baseClass: TypeElement, packageName: String, baseClassName: String, dtoType: String, includeToPartial: Boolean): FileSpec {
-        val dtoClassName = "$dtoType$baseClassName"
+    fun generateClass(baseClass: TypeElement, packageName: String, baseClassName: String, partialType: String, includeToPartial: Boolean): FileSpec {
+        val partialClassName = "$partialType$baseClassName"
         val classNameLc = baseClassName.toLowerCase()
-        val typeBuilder = TypeSpec.classBuilder(dtoClassName)
+        val typeBuilder = TypeSpec.classBuilder(partialClassName)
                 .addModifiers(KModifier.DATA)
         val primaryConBuilder = FunSpec.constructorBuilder()
         val dataParams = StringJoiner(", ")
+        val partialDataParams = StringJoiner(", ")
 
         baseClass.enclosedElements.forEach {
             val propertyName = it.simpleName.toString()
             val annotations = it.annotationMirrors
                     .map { m -> AnnotationSpec.get(m).toBuilder().useSiteTarget(AnnotationSpec.UseSiteTarget.FIELD).build() }
-                    .filter { m -> !m.className.toString().endsWith(".NotNull") && !m.className.toString().endsWith(".Nullable") && !m.className.toString().endsWith(".DtoField") }
+                    .filter { m -> !m.className.toString().endsWith(".NotNull") && !m.className.toString().endsWith(".Nullable") && !m.className.toString().endsWith(".PartialField") }
 
-            val required = getFieldRequired(it, dtoType)
+            val required = getFieldRequired(it, partialType)
 
-            if (it.kind == ElementKind.FIELD && propertyName != "Companion" && required != DtoFieldRequired.ABSENT) {
-                val isNullable = required == DtoFieldRequired.OPTIONAL
+            if (it.kind == ElementKind.FIELD && propertyName != "Companion" && required != PartialFieldRequired.ABSENT) {
+                val isNullable = required == PartialFieldRequired.OPTIONAL
                 val propertyType = javaToKotlinType(it.asType().asTypeName(), annotations).copy(nullable = isNullable)
                 if (isNullable) {
                     primaryConBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
@@ -125,11 +126,12 @@ class DtoGenerateProcessor: AbstractProcessor() {
                         .initializer(propertyName)
                         .build())
                 dataParams.add("$propertyName = $classNameLc.$propertyName")
+                partialDataParams.add("$propertyName = $propertyName")
             }
         }
-        // copy all annotations from the base type other than @DtoGenerate itself and kotlin metadata
+        // copy all annotations from the base type other than @PartialGenerate itself and kotlin metadata
         baseClass.annotationMirrors.forEach {
-            if (it.annotationType.toString() != "io.stardog.stardao.kotlin.dto.annotations.DtoGenerate"
+            if (it.annotationType.toString() != "io.stardog.stardao.kotlin.partial.annotations.PartialGenerate"
                     && it.annotationType.toString() != "kotlin.Metadata") {
                 typeBuilder.addAnnotation(AnnotationSpec.get(it))
             }
@@ -141,10 +143,12 @@ class DtoGenerateProcessor: AbstractProcessor() {
                 .build())
         if (includeToPartial) {
             typeBuilder.addFunction(FunSpec.builder("toPartial")
+                    .returns(ClassName(packageName, "Partial$baseClassName"))
+                    .addCode("return Partial$baseClassName($partialDataParams)")
                     .build())
         }
 
-        val file = FileSpec.builder(packageName, dtoClassName)
+        val file = FileSpec.builder(packageName, partialClassName)
                 .addType(typeBuilder.build())
                 .build()
 

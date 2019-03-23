@@ -5,11 +5,11 @@
     <parent>
         <artifactId>stardao</artifactId>
         <groupId>io.stardog.stardao</groupId>
-        <version>0.3.5-SNAPSHOT</version>
+        <version>0.3.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>stardao-kotlin-dto</artifactId>
+    <artifactId>stardao-kotlin-partial</artifactId>
 
     <properties>
         <kotlin.version>1.3.21</kotlin.version>

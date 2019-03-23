@@ -1,8 +1,8 @@
-package io.stardog.stardao.kotlin.dto
+package io.stardog.stardao.kotlin.partial
 
 import io.stardog.stardao.annotations.Id
 import io.stardog.stardao.annotations.Updatable
-import io.stardog.stardao.kotlin.dto.annotations.DtoGenerate
+import io.stardog.stardao.kotlin.partial.annotations.PartialGenerate
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -14,7 +14,7 @@ class DtoGenerateProcessorTest {
     }
 }
 
-@DtoGenerate(["Test"])
+@PartialGenerate(["Test"])
 data class ExampleUser(
     @Id
     val id: String,

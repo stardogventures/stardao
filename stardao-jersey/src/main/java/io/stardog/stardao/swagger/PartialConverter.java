@@ -14,17 +14,26 @@ import java.util.Iterator;
 
 /**
  * The PartialConverter takes references to PartialModel objects and turns them into references to Model objects.
+ *
+ * Optionally, you can convert any other prefix, such as Dto.
  */
 public class PartialConverter implements ModelConverter {
+    private final String prefix;
+
     public PartialConverter() {
+        this("Partial");
+    }
+
+    public PartialConverter(String prefix) {
+        this.prefix = prefix;
     }
 
     public Property resolveProperty(Type type, ModelConverterContext context, Annotation[] annotations, Iterator<ModelConverter> chain) {
         JavaType jType = Json.mapper().constructType(type);
         if(jType != null) {
             Class<?> cls = jType.getRawClass();
-            if (cls.getSimpleName().startsWith("Partial")) {
-                String baseClass = cls.getSimpleName().substring(7);
+            if (cls.getSimpleName().startsWith(prefix)) {
+                String baseClass = cls.getSimpleName().substring(prefix.length());
                 return new RefProperty("#/definitions/" + baseClass);
             }
         }
