@@ -8,14 +8,15 @@ import javax.lang.model.SourceVersion
 import kotlin.reflect.jvm.internal.impl.name.FqName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import io.stardog.stardao.kotlin.partial.annotations.PartialFieldRequired
-import io.stardog.stardao.kotlin.partial.annotations.PartialGenerate
+import io.stardog.stardao.kotlin.partial.annotations.PartialDataObjects
 import java.util.*
 import javax.lang.model.element.*
+import kotlin.math.log
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 
-class PartialGenerateProcessor: AbstractProcessor() {
+class PartialDataObjectsProcessor: AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
-        return mutableSetOf(PartialGenerate::class.java.name)
+        return mutableSetOf(PartialDataObjects::class.java.name)
     }
 
     override fun getSupportedSourceVersion(): SourceVersion {
@@ -23,10 +24,10 @@ class PartialGenerateProcessor: AbstractProcessor() {
     }
 
     override fun process(annotations: MutableSet<out TypeElement>, env: RoundEnvironment): Boolean {
-        env.getElementsAnnotatedWith(PartialGenerate::class.java).forEach {
+        env.getElementsAnnotatedWith(PartialDataObjects::class.java).forEach {
             val baseClassName = it.simpleName.toString()
             val packageName = processingEnv.elementUtils.getPackageOf(it).toString()
-            val partialGenerateAnnotation = it.getAnnotation(PartialGenerate::class.java)
+            val partialGenerateAnnotation = it.getAnnotation(PartialDataObjects::class.java)
             for (partialType in partialGenerateAnnotation.types) {
                 val includeToPartial = partialType != "Partial" && partialGenerateAnnotation.types.contains("Partial")
                 val file = generateClass(it as TypeElement, packageName, baseClassName, partialType, includeToPartial)
@@ -50,6 +51,17 @@ class PartialGenerateProcessor: AbstractProcessor() {
             val map = toAnnotationMap(ann)
             if (map["type()"].toString() == "\"$partialType\"") {
                 return PartialFieldRequired.valueOf(map["required()"]!!.value.toString())
+            }
+        }
+        return null
+    }
+
+    fun getPartialFieldAnnotationClassName(field: Element, partialType: String): String? {
+        val partialFieldAnnotations = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.kotlin.partial.annotations.PartialField" }
+        for (ann in partialFieldAnnotations) {
+            val map = toAnnotationMap(ann)
+            if (map["type()"].toString() == "\"$partialType\"") {
+                return map["className()"]!!.value.toString()
             }
         }
         return null
@@ -111,7 +123,13 @@ class PartialGenerateProcessor: AbstractProcessor() {
 
             if (it.kind == ElementKind.FIELD && propertyName != "Companion" && required != PartialFieldRequired.ABSENT) {
                 val isNullable = required == PartialFieldRequired.OPTIONAL
-                val propertyType = javaToKotlinType(it.asType().asTypeName(), annotations).copy(nullable = isNullable)
+                val className = getPartialFieldAnnotationClassName(it, partialType)
+                val propertyType: TypeName
+                if (className != null) {
+                    propertyType = ClassName(packageName, className).copy(nullable = isNullable)
+                } else {
+                    propertyType = javaToKotlinType(it.asType().asTypeName(), annotations).copy(nullable = isNullable)
+                }
                 if (isNullable) {
                     primaryConBuilder.addParameter(ParameterSpec.builder(propertyName, propertyType)
                             .defaultValue("null")
@@ -161,7 +179,7 @@ class PartialGenerateProcessor: AbstractProcessor() {
         if (javaType is ParameterizedTypeName) {
             val rawTypeClass = javaToKotlinType(javaType.rawType, annotations) as ClassName
             val typedArgs = javaType.typeArguments.map { javaToKotlinType(it, emptyList()) }.toMutableList()
-            val hasNullableValues = annotations.filter { it.className.toString() == "io.stardog.stardao.auto.annotations.HasNullableValues" }.isNotEmpty()
+            val hasNullableValues = annotations.filter { it.className.toString().endsWith(".HasNullableValues") }.isNotEmpty()
             if (hasNullableValues) {
                 typedArgs[typedArgs.size-1] = typedArgs[typedArgs.size-1].copy(nullable = true)
             }

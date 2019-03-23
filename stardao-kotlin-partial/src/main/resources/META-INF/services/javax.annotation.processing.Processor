@@ -1,1 +1,1 @@
-io.stardog.stardao.kotlin.partial.processor.PartialGenerateProcessor
+io.stardog.stardao.kotlin.partial.processor.PartialDataObjectsProcessor
