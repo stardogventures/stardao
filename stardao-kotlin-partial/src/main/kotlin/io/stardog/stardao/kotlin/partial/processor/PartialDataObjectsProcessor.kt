@@ -157,9 +157,9 @@ class PartialDataObjectsProcessor: AbstractProcessor() {
                 partialDataParams.add("$propertyName = $propertyName")
             }
         }
-        // copy all annotations from the base type other than @PartialGenerate itself and kotlin metadata
+        // copy all annotations from the base type other than @PartialDataObjects itself and kotlin metadata
         baseClass.annotationMirrors.forEach {
-            if (it.annotationType.toString() != "io.stardog.stardao.kotlin.partial.annotations.PartialGenerate"
+            if (it.annotationType.toString() != "io.stardog.stardao.kotlin.partial.annotations.PartialDataObjects"
                     && it.annotationType.toString() != "kotlin.Metadata") {
                 typeBuilder.addAnnotation(AnnotationSpec.get(it))
             }
