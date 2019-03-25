@@ -50,7 +50,12 @@ class PartialDataObjectsProcessor: AbstractProcessor() {
         for (ann in partialFieldAnnotations) {
             val map = toAnnotationMap(ann)
             if (map["type()"].toString() == "\"$partialType\"") {
-                return PartialFieldRequired.valueOf(map["required()"]!!.value.toString())
+                val required = map["required()"]?.value
+                if (required != null) {
+                    return PartialFieldRequired.valueOf(required.toString())
+                } else {
+                    return null
+                }
             }
         }
         return null
@@ -61,7 +66,12 @@ class PartialDataObjectsProcessor: AbstractProcessor() {
         for (ann in partialFieldAnnotations) {
             val map = toAnnotationMap(ann)
             if (map["type()"].toString() == "\"$partialType\"") {
-                return map["className()"]!!.value.toString()
+                val className = map["className()"]?.value
+                if (className != null) {
+                    return className.toString()
+                } else {
+                    return null
+                }
             }
         }
         return null
