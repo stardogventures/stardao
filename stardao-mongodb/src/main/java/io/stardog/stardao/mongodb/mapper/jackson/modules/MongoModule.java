@@ -2,6 +2,7 @@ package io.stardog.stardao.mongodb.mapper.jackson.modules;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import io.stardog.stardao.mongodb.mapper.jackson.ObjectIdDeserializer;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 
@@ -14,5 +15,6 @@ public class MongoModule extends SimpleModule {
         super();
         addSerializer(Decimal128.class, new ToStringSerializer());
         addSerializer(ObjectId.class, new ToStringSerializer());
+        addDeserializer(ObjectId.class, new ObjectIdDeserializer());
     }
 }
