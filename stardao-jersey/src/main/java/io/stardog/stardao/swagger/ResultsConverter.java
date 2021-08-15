@@ -21,13 +21,19 @@ import java.util.Iterator;
  */
 public class ResultsConverter implements ModelConverter {
     private String prefix;
+    private boolean includeNextType;
 
     public ResultsConverter() {
         this("Partial");
     }
 
     public ResultsConverter(String prefix) {
+        this(prefix, true);
+    }
+
+    public ResultsConverter(String prefix, boolean includeNextType) {
         this.prefix = prefix;
+        this.includeNextType = includeNextType;
     }
 
     public Property resolveProperty(Type type, ModelConverterContext context, Annotation[] annotations, Iterator<ModelConverter> chain) {
@@ -46,7 +52,11 @@ public class ResultsConverter implements ModelConverter {
                 String nextType = jType.containedType(1).getRawClass().getSimpleName();
 
                 ModelImpl result = new ModelImpl();
-                result.name("Results" + modelType + nextType);
+                if (includeNextType) {
+                    result.name("Results" + modelType + nextType);
+                } else {
+                    result.name("Results" + modelType);
+                }
 
                 Property dataProperty = new ArrayProperty(new RefProperty("#/definitions/" + modelType));
                 dataProperty.setRequired(true);
