@@ -102,12 +102,38 @@ class PartialDataObjectsProcessor: AbstractProcessor() {
 
         } else if (partialType == "Update") {
             // for the Update type, any field marked @Updatable is included; all fields are always optional
-            val isUpdatable = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.annotations.Updatable" }.isNotEmpty()
+            val isUpdatable =
+                field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.annotations.Updatable" }
+                    .isNotEmpty()
             if (isUpdatable) {
                 return PartialFieldRequired.OPTIONAL
             } else {
                 return PartialFieldRequired.ABSENT
             }
+        } else if (partialType == "Dto") {
+            // for the Dto type, any field marked @DtoRequired is required; any field marked @DtoAbsent is absent; all other fields are always optional
+            var isDtoRequired = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.kotlin.partial.annotations.DtoRequired" }.isNotEmpty()
+
+            // the Dto type will also pick up the "required" property from swagger @ApiModelProperty automatically
+            val apiModelProperty = field.annotationMirrors.find { it.annotationType.toString() == "io.swagger.annotations.ApiModelProperty" }
+            if (apiModelProperty != null) {
+                val propertyMap = toAnnotationMap(apiModelProperty)
+                if (propertyMap["required()"]?.toString() == "true") {
+                    isDtoRequired = true
+                }
+            }
+
+            // the @DtoAbsent property will automatically mark a property as not present for Dtos
+            val isDtoAbsent = field.annotationMirrors.filter { it.annotationType.toString() == "io.stardog.stardao.kotlin.partial.annotations.DtoAbsent" }.isNotEmpty()
+
+            if (isDtoAbsent) {
+                return PartialFieldRequired.ABSENT
+            } else if (isDtoRequired) {
+                return PartialFieldRequired.REQUIRED
+            } else {
+                return PartialFieldRequired.OPTIONAL
+            }
+
         } else {
             // for other types, default is OPTIONAL for all fields unless specified otherwise
             return PartialFieldRequired.OPTIONAL
