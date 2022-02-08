@@ -157,7 +157,7 @@ class PartialDataObjectsProcessor: AbstractProcessor() {
 
             val required = getFieldRequired(it, partialType)
 
-            if (it.kind == ElementKind.FIELD && propertyName != "Companion" && required != PartialFieldRequired.ABSENT) {
+            if (it.kind == ElementKind.FIELD && !it.modifiers.contains(Modifier.STATIC) && required != PartialFieldRequired.ABSENT) {
                 val isNullable = required == PartialFieldRequired.OPTIONAL
                 val className = getPartialFieldAnnotationClassName(it, partialType)
                 val propertyType: TypeName
